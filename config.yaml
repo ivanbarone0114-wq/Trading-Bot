@@ -1,0 +1,67 @@
+# ============ CONFIGURACIÓN DEL BOT ============
+mode: paper              # alerts | paper | live
+state_dir: state         # cartera simulada, bitácora y alertas
+
+capital:                 # capital asignado por mercado (en la moneda de cada mercado)
+  crypto: 1000           # USDT
+  us: 1000               # USD
+  byma: 1000000          # ARS
+
+watchlist:
+  # --- Cripto ---
+  - {symbol: BTC/USDT, market: crypto, timeframe: 4h, htf: 1d, keywords: [bitcoin, btc]}
+  - {symbol: ETH/USDT, market: crypto, timeframe: 4h, htf: 1d, keywords: [ethereum]}
+
+  # --- BYMA (acciones locales, en ARS) ---
+  - {symbol: GGAL,  market: byma, timeframe: 1d, htf: 1wk, keywords: [galicia, merval]}
+  - {symbol: YPFD,  market: byma, timeframe: 1d, htf: 1wk, keywords: [ypf, merval]}
+  - {symbol: PAMP,  market: byma, timeframe: 1d, htf: 1wk, keywords: [pampa energía]}
+  - {symbol: BMA,   market: byma, timeframe: 1d, htf: 1wk, keywords: [banco macro]}
+  - {symbol: TXAR,  market: byma, timeframe: 1d, htf: 1wk, keywords: [ternium argentina]}
+  - {symbol: ALUA,  market: byma, timeframe: 1d, htf: 1wk, keywords: [aluar]}
+  - {symbol: CEPU,  market: byma, timeframe: 1d, htf: 1wk, keywords: [central puerto]}
+  - {symbol: TGSU2, market: byma, timeframe: 1d, htf: 1wk, keywords: [transportadora gas del sur]}
+  - {symbol: VIST, market: us, timeframe: 1d, htf: 1wk, keywords: [vista energy]}
+
+  # --- NYSE / EE.UU. (en USD) ---
+  - {symbol: SPY,  market: us, timeframe: 1d, htf: 1wk, keywords: ["wall street", "s&p 500"]}
+  - {symbol: NVDA, market: us, timeframe: 1d, htf: 1wk, keywords: [nvidia]}
+  - {symbol: KO,   market: us, timeframe: 1d, htf: 1wk, keywords: [coca-cola]}
+  - {symbol: JPM,  market: us, timeframe: 1d, htf: 1wk, keywords: [jpmorgan]}
+  - {symbol: XOM,  market: us, timeframe: 1d, htf: 1wk, keywords: [exxon]}
+  - {symbol: YPF,  market: us, timeframe: 1d, htf: 1wk, keywords: [ypf adr]}
+  - {symbol: GGAL, market: us, timeframe: 1d, htf: 1wk, keywords: [galicia adr]}
+  - {symbol: MELI, market: us, timeframe: 1d, htf: 1wk, keywords: [mercadolibre]}
+
+strategy:
+  ema_fast: 20
+  ema_slow: 50
+  rsi_period: 14
+  rsi_oversold: 30
+  rsi_overbought: 70
+  macd_fast: 12
+  macd_slow: 26
+  macd_signal: 9
+  atr_period: 14
+  atr_stop_mult: 2.0     # stop = entrada - 2 x ATR
+  reward_risk: 2.0       # objetivo = 2 x distancia al stop
+  threshold: 0.35        # |score| mínimo para BUY/SELL
+  weights: {trend: 2.0, macd: 1.5, rsi: 1.0, patterns: 1.0, news: 0.75}
+
+risk:
+  risk_per_trade: 0.01       # 1% del capital en riesgo por operación
+  max_position_pct: 0.20     # máx. 20% del capital en un solo activo
+  max_open_positions: 5
+  max_daily_loss_pct: 0.03   # corta el día si pierde 3%
+  fee: 0.001
+  slippage: 0.0005
+
+news:
+  enabled: true
+  max_items: 20
+
+live:
+  enabled: false         # doble llave: esto en true + flag --confirm-live
+  auto_confirm: false    # false = pide confirmación por consola en cada orden
+  crypto_testnet: true   # Binance testnet (dinero ficticio)
+  alpaca_paper: true     # Alpaca paper (dinero ficticio)

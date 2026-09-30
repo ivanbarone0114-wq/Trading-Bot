@@ -1,0 +1,8 @@
+pandas>=2.0
+numpy>=1.24
+pyyaml>=6.0
+requests>=2.31
+python-dotenv>=1.0
+ccxt>=4.0          # cripto (datos + ejecución Binance)
+yfinance>=0.2.40   # acciones EE.UU. y BYMA (.BA)
+feedparser>=6.0    # noticias RSS
