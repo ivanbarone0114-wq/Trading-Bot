@@ -1,4 +1,4 @@
-"""Notificaciones: consola + Telegram + WhatsApp (CallMeBot). Se activan solo si están configuradas en .env."""
+"""Notificaciones: consola + Telegram + WhatsApp (CallMeBot). Se activan solo si están configuradas."""
 import os, re, time, requests
 
 
@@ -11,15 +11,20 @@ def _telegram(text):
 
 def _whatsapp(text):
     phone, key = os.getenv("WHATSAPP_PHONE"), os.getenv("WHATSAPP_APIKEY")
-    if phone and key:
-        msg = text.replace("<b>", "*").replace("</b>", "*")  # negrita de WhatsApp
-        msg = re.sub(r"\b([A-Z0-9]+)\.BA\b", r"\1 (BA)", msg)  # evita que WhatsApp lo tome como link
-        for part in _chunks(msg, 700):
-            r = requests.get("https://api.callmebot.com/whatsapp.php",
-                             params={"phone": phone, "text": part, "apikey": key}, timeout=20)
-            if r.status_code != 200:
-                raise RuntimeError(f"CallMeBot respondió {r.status_code}")
-            time.sleep(3)  # CallMeBot limita mensajes seguidos
+    if not (phone and key):
+        print("[whatsapp] sin configurar: faltan WHATSAPP_PHONE / WHATSAPP_APIKEY")
+        return
+    msg = text.replace("<b>", "*").replace("</b>", "*")  # negrita de WhatsApp
+    msg = re.sub(r"\b([A-Z0-9]+)\.BA\b", r"\1 (BA)", msg)  # evita que WhatsApp lo tome como link
+    for part in _chunks(msg, 700):
+        r = requests.get("https://api.callmebot.com/whatsapp.php",
+                         params={"phone": phone.strip(), "text": part, "apikey": key.strip()}, timeout=30)
+        body = re.sub(r"<[^>]+>", " ", r.text)
+        body = re.sub(r"\s+", " ", body).strip()[:200]
+        print(f"[whatsapp] código {r.status_code}: {body}")
+        if not 200 <= r.status_code < 300:
+            raise RuntimeError(f"CallMeBot respondió {r.status_code}")
+        time.sleep(5)  # CallMeBot limita mensajes seguidos
 
 
 def _chunks(text, limit):
