@@ -71,7 +71,7 @@ def alerted_before(state_dir, sig):
     return False
 
 
-def cycle(cfg, mode, offline, confirm_live=False, summary=False):
+def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False):
     j = Journal(cfg["state_dir"])
     risk = RiskManager(cfg["risk"], cfg["capital"], cfg["state_dir"])
     brokers = get_brokers(cfg, mode, confirm_live) if mode in ("paper", "live") else None
@@ -90,7 +90,7 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False):
         emoji = {"BUY": "🟢", "SELL": "🔴", "HOLD": "⚪"}[sig.action]
         lines.append(f"{emoji} <b>{sym}</b> {sig.action} ({sig.score:+.2f}) | {sig.price:,.2f} | RSI {sig.rsi:.0f}")
         if sig.action != "HOLD" and not alerted_before(cfg["state_dir"], sig):
-            if not summary:
+            if not summary and not quiet:
                 notify(sig.text())
             j.log(kind="alert", mode=mode, symbol=sym, market=mkt, side=sig.action, price=sig.price,
                   stop=sig.stop or "", target=sig.target or "", note=f"score {sig.score}")
@@ -151,6 +151,46 @@ def paper_lines(paper, last_px, j):
     cash = ", ".join(f"{m} {c:,.0f}" for m, c in paper.s["cash"].items())
     out += [f"Efectivo: {cash}", f"PnL realizado acumulado: {realized:+,.2f}"]
     return out
+
+
+def cmd_daily(cfg, offline=False):
+    """Resumen de cierre: señales, operaciones del día, CCL y cartera. No opera."""
+    from datetime import datetime
+    j = Journal(cfg["state_dir"])
+    paper = PaperBroker(cfg["state_dir"], cfg["capital"], cfg["risk"]["fee"], cfg["risk"]["slippage"])
+    lines, px_cache, last_px = [], {}, {}
+    for item in cfg["watchlist"]:
+        try:
+            sig, df, _ = analyze(item, cfg, offline)
+        except Exception as e:
+            print(f"[{item['symbol']}] error de datos: {e}")
+            continue
+        px = float(df["close"].iloc[-1])
+        px_cache[sig.symbol] = (px, df.index[-1].date())
+        last_px[sig.symbol] = px
+        emoji = {"BUY": "🟢", "SELL": "🔴", "HOLD": "⚪"}[sig.action]
+        lines.append(f"{emoji} <b>{sig.symbol}</b> {sig.action} ({sig.score:+.2f}) | {px:,.2f} | RSI {sig.rsi:.0f}")
+
+    today = datetime.now().date()
+    ops = []
+    for r in j.rows_since(2):
+        if r["kind"] != "trade" or r["mode"] != "paper":
+            continue
+        if datetime.fromisoformat(r["time"]).astimezone().date() != today:
+            continue
+        if r["side"] == "buy":
+            ops.append(f"🟢 Compra {r['symbol']} {float(r['qty']):.4f} @ {float(r['price']):,.2f}")
+        else:
+            pnl = f" | PnL {float(r['pnl']):+,.2f}" if r["pnl"] else ""
+            ops.append(f"🔴 Venta {r['symbol']} @ {float(r['price']):,.2f} ({r['note']}){pnl}")
+    ops_block = ["", "🧾 <b>Operaciones de hoy</b>"] + (ops or ["Sin operaciones"])
+
+    extra = ops_block
+    if cfg.get("ccl", {}).get("enabled", True):
+        extra += ccl_lines(cfg, px_cache, offline)
+    extra += paper_lines(paper, last_px, j)
+    notify(f"🌙 <b>Resumen del día {datetime.now():%d/%m}</b>\n" + "\n".join(lines + extra)
+           + "\n⚠️ No es consejo financiero. DYOR.")
 
 
 def cmd_report(cfg, a):
@@ -241,6 +281,8 @@ def main():
     r.add_argument("--loop", type=int, default=0, help="segundos entre ciclos (0 = una vez)")
     r.add_argument("--confirm-live", action="store_true")
     r.add_argument("--resumen", action="store_true", help="un solo mensaje con toda la watchlist en cada ciclo")
+    r.add_argument("--solo-operaciones", action="store_true", help="solo avisa compras y ventas, sin señales ni resumen")
+    sub.add_parser("resumen-dia", help="resumen de cierre del día (no opera)")
 
     d = sub.add_parser("decide")
     d.add_argument("--symbol", required=True)
@@ -272,7 +314,7 @@ def main():
         mode = a.mode or cfg["mode"]
         while True:
             try:
-                cycle(cfg, mode, a.offline, a.confirm_live, a.resumen)
+                cycle(cfg, mode, a.offline, a.confirm_live, a.resumen, a.solo_operaciones)
                 if mode == "paper":
                     maybe_weekly_report(cfg, a.offline)
             except Exception as e:  # que un error de red no corte el loop
@@ -285,6 +327,8 @@ def main():
     elif a.cmd == "backtest":
         df = load_csv(a.csv) if a.csv else fetch_ohlcv(a.symbol, a.market, a.timeframe, 1000, a.offline)
         print(bt.report(bt.run(df, cfg["strategy"], cfg["risk"])))
+    elif a.cmd == "resumen-dia":
+        cmd_daily(cfg, a.offline)
     elif a.cmd == "ccl":
         text = "\n".join(ccl_lines(cfg, {}, a.offline)[1:]) or "No se pudo calcular el CCL."
         notify(text) if a.enviar else print(text.replace("<b>", "").replace("</b>", ""))
