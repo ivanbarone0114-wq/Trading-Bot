@@ -51,7 +51,7 @@ strategy:
 risk:
   risk_per_trade: 0.01       # 1% del capital en riesgo por operación
   max_position_pct: 0.20     # máx. 20% del capital en un solo activo
-  max_open_positions: 5
+  max_open_positions: 10
   max_daily_loss_pct: 0.03   # corta el día si pierde 3%
   fee: 0.001
   slippage: 0.0005
@@ -71,3 +71,7 @@ ccl:
   pairs:
     - {local: GGAL, adr: GGAL, ratio: 10}
     - {local: YPFD, adr: YPF,  ratio: 10}
+universe:
+  us: [AAPL, MSFT, AMZN, GOOGL, META, TSLA, AVGO, AMD, NFLX, V, MA, UNH, JNJ, PFE,
+       CVX, PEP, WMT, COST, DIS, CAT, BA, GLOB, BMA, PAM, CEPU, TGS, LOMA, SUPV, BBAR, TEO]
+  byma: [TGNO4, CRES, LOMA, EDN, SUPV, BBAR, TECO2, COME, BYMA, VALO, MIRG, TRAN]
