@@ -65,3 +65,9 @@ live:
   auto_confirm: false    # false = pide confirmación por consola en cada orden
   crypto_testnet: true   # Binance testnet (dinero ficticio)
   alpaca_paper: true     # Alpaca paper (dinero ficticio)
+
+ccl:
+  enabled: true
+  pairs:
+    - {local: GGAL, adr: GGAL, ratio: 10}
+    - {local: YPFD, adr: YPF,  ratio: 10}
