@@ -71,38 +71,76 @@ def alerted_before(state_dir, sig):
     return False
 
 
+def items_of(cfg):
+    """Watchlist + universo de acciones a escanear (sin duplicados)."""
+    items = list(cfg.get("watchlist") or [])
+    seen = {(w["symbol"], w["market"]) for w in items}
+    uni = cfg.get("universe") or {}
+    for mkt in ("us", "byma", "crypto"):
+        for sym in uni.get(mkt) or []:
+            if (sym, mkt) not in seen:
+                seen.add((sym, mkt))
+                items.append({"symbol": sym, "market": mkt,
+                              "timeframe": uni.get("timeframe", "4h" if mkt == "crypto" else "1d"),
+                              "htf": uni.get("htf", "1d" if mkt == "crypto" else "1wk")})
+    return items
+
+
+EMOJI = {"BUY": "🟢", "SELL": "🔴", "HOLD": "⚪"}
+
+
+def sig_line(s):
+    return f"{EMOJI[s.action]} <b>{s.symbol}</b> {s.action} ({s.score:+.2f}) | {s.price:,.2f} | RSI {s.rsi:.0f}"
+
+
+def ranking_lines(sigs, full_limit=14, top=5):
+    """Lista completa si son pocos activos; si son muchos, solo los mejores y los más débiles."""
+    if len(sigs) <= full_limit:
+        return [sig_line(s) for s in sigs]
+    nb = sum(s.action == "BUY" for s in sigs)
+    ns = sum(s.action == "SELL" for s in sigs)
+    best = sorted([s for s in sigs if s.score > 0], key=lambda s: -s.score)[:top]
+    worst = sorted([s for s in sigs if s.score < 0], key=lambda s: s.score)[:top]
+    out = [f"Analizados {len(sigs)} activos: 🟢 {nb} compra, 🔴 {ns} venta, ⚪ {len(sigs) - nb - ns} neutrales",
+           "", "🔝 <b>Mejores candidatos a compra</b>"]
+    out += [sig_line(s) for s in best] or ["Ninguno con score positivo"]
+    out += ["", "🔻 <b>Más débiles</b>"]
+    out += [sig_line(s) for s in worst] or ["Ninguno con score negativo"]
+    return out
+
+
 def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False):
     j = Journal(cfg["state_dir"])
     risk = RiskManager(cfg["risk"], cfg["capital"], cfg["state_dir"])
     brokers = get_brokers(cfg, mode, confirm_live) if mode in ("paper", "live") else None
-    lines, last_px, px_cache = [], {}, {}
+    results, last_px, px_cache = [], {}, {}
 
-    for item in cfg["watchlist"]:
+    # 1) analizar todo
+    for item in items_of(cfg):
         mkt = item["market"]
         try:
             sig, df, _ = analyze(item, cfg, offline)
-            sym = sig.symbol
-            px_cache[sym] = (float(df["close"].iloc[-1]), df.index[-1].date())
         except Exception as e:
             print(f"[{item['symbol']}] error de datos: {e}")
             continue
-
-        emoji = {"BUY": "🟢", "SELL": "🔴", "HOLD": "⚪"}[sig.action]
-        lines.append(f"{emoji} <b>{sym}</b> {sig.action} ({sig.score:+.2f}) | {sig.price:,.2f} | RSI {sig.rsi:.0f}")
+        sym = sig.symbol
+        px_cache[sym] = (float(df["close"].iloc[-1]), df.index[-1].date())
+        last_px[sym] = float(df["close"].iloc[-1])
+        results.append((item, sig, df))
         if sig.action != "HOLD" and not alerted_before(cfg["state_dir"], sig):
             if not summary and not quiet:
                 notify(sig.text())
             j.log(kind="alert", mode=mode, symbol=sym, market=mkt, side=sig.action, price=sig.price,
                   stop=sig.stop or "", target=sig.target or "", note=f"score {sig.score}")
-        if not brokers:
-            continue
 
-        b = brokers[mkt]
-        pos = b.position(sym)
-        last = df.iloc[-1]
-        last_px[sym] = float(last["close"])
-
-        if pos and pos["qty"] > 0:
+    if brokers:
+        # 2) salidas primero: liberan efectivo y cupos
+        for item, sig, df in results:
+            mkt, sym, last = item["market"], sig.symbol, df.iloc[-1]
+            b = brokers[mkt]
+            pos = b.position(sym)
+            if not (pos and pos["qty"] > 0):
+                continue
             why = None
             if pos.get("stop") and last["low"] <= pos["stop"]:
                 why, px = "stop", pos["stop"]
@@ -116,26 +154,41 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False):
                       price=fill, pnl=pnl if pnl is not None else "", note=why)
                 notify(f"🔴 [{mode}] Venta {sym} @ {fill:,.4f} ({why})" + (f" | PnL {pnl:+,.2f}" if pnl is not None else ""))
 
-        elif sig.action == "BUY":
+        # 3) entradas: las señales más fuertes primero
+        buys = sorted([r for r in results if r[1].action == "BUY"], key=lambda r: -r[1].score)
+        for item, sig, df in buys:
+            mkt, sym = item["market"], sig.symbol
+            b = brokers[mkt]
+            if b.position(sym):
+                continue
             ok, reason = risk.can_open(mkt, b.open_count(mkt), j.realized_today(mkt))
             if not ok:
                 print(f"[{sym}] compra bloqueada: {reason}")
                 continue
             qty = risk.size(mkt, sig.price, sig.stop, b.cash(mkt))
+            if mkt == "byma":
+                qty = float(int(qty))  # en BYMA se compran acciones enteras
             if qty <= 0:
+                print(f"[{sym}] sin efectivo suficiente para comprar")
                 continue
             if confirm(f"[{mode}] COMPRAR {qty:.6f} {sym} @ ~{sig.price:,.4f} (stop {sig.stop:,.4f}).", cfg, mode):
-                fill = b.buy(sym, mkt, qty, sig.price, sig.stop, sig.target)
+                try:
+                    fill = b.buy(sym, mkt, qty, sig.price, sig.stop, sig.target)
+                except Exception as e:
+                    print(f"[{sym}] compra no ejecutada: {e}")
+                    continue
                 j.log(kind="trade", mode=mode, symbol=sym, market=mkt, side="buy", qty=qty, price=fill,
                       stop=sig.stop, target=sig.target, note=f"score {sig.score}")
-                notify(f"🟢 [{mode}] Compra {qty:.6f} {sym} @ {fill:,.4f} | stop {sig.stop:,.4f} | obj {sig.target:,.4f}")
+                notify(f"🟢 [{mode}] Compra {qty:.4f} {sym} @ {fill:,.4f} | score {sig.score:+.2f} | "
+                       f"stop {sig.stop:,.4f} | obj {sig.target:,.4f}")
 
-    if summary and lines:
+    if summary and results:
         from datetime import datetime
         extra = paper_lines(brokers["crypto"], last_px, j) if mode == "paper" and brokers else []
         if cfg.get("ccl", {}).get("enabled", True):
             extra = ccl_lines(cfg, px_cache, offline) + extra
-        notify(f"📊 <b>Resumen {datetime.now():%d/%m %H:%M}</b>\n" + "\n".join(lines + extra) + "\n⚠️ No es consejo financiero. DYOR.")
+        notify(f"📊 <b>Resumen {datetime.now():%d/%m %H:%M}</b>\n"
+               + "\n".join(ranking_lines([r[1] for r in results]) + extra) + "\n⚠️ No es consejo financiero. DYOR.")
 
 
 def paper_lines(paper, last_px, j):
@@ -158,8 +211,8 @@ def cmd_daily(cfg, offline=False):
     from datetime import datetime
     j = Journal(cfg["state_dir"])
     paper = PaperBroker(cfg["state_dir"], cfg["capital"], cfg["risk"]["fee"], cfg["risk"]["slippage"])
-    lines, px_cache, last_px = [], {}, {}
-    for item in cfg["watchlist"]:
+    sigs, px_cache, last_px = [], {}, {}
+    for item in items_of(cfg):
         try:
             sig, df, _ = analyze(item, cfg, offline)
         except Exception as e:
@@ -168,8 +221,8 @@ def cmd_daily(cfg, offline=False):
         px = float(df["close"].iloc[-1])
         px_cache[sig.symbol] = (px, df.index[-1].date())
         last_px[sig.symbol] = px
-        emoji = {"BUY": "🟢", "SELL": "🔴", "HOLD": "⚪"}[sig.action]
-        lines.append(f"{emoji} <b>{sig.symbol}</b> {sig.action} ({sig.score:+.2f}) | {px:,.2f} | RSI {sig.rsi:.0f}")
+        sigs.append(sig)
+    lines = ranking_lines(sigs)
 
     today = datetime.now().date()
     ops = []
