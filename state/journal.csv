@@ -24,3 +24,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note
 2026-09-30T16:37:03+00:00,alert,paper,BTC/USDT,crypto,BUY,,84217.79,82442.37201920905,87768.62596158189,,score 0.424
 2026-09-30T16:37:11+00:00,alert,paper,ETH/USDT,crypto,BUY,,2684.18,2612.929937137643,2826.6801257247143,,score 0.406
 2026-09-30T19:09:41+00:00,alert,paper,GGAL.BA,byma,SELL,,6130.0,,,,score -0.464
+2026-09-30T19:15:46+00:00,alert,paper,BMA.BA,byma,SELL,,10920.0,,,,score -0.44
