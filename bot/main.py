@@ -5,7 +5,7 @@
   python -m bot.main backtest ...         → prueba histórica
   python -m bot.main status               → cartera simulada
 Agregá --offline para probar con datos sintéticos."""
-import argparse, json, os, sys, time
+import argparse, json, os, re, sys, time
 import yaml
 
 try:
@@ -246,6 +246,84 @@ def cmd_daily(cfg, offline=False):
            + "\n⚠️ No es consejo financiero. DYOR.")
 
 
+CRYPTO_BASES = {"BTC", "ETH", "SOL", "BNB", "XRP", "ADA", "DOGE", "DOT", "AVAX", "LINK", "LTC", "TRX", "MATIC", "POL", "TON", "USDT"}
+
+
+def resolve_symbol(raw, cfg):
+    """Devuelve [(símbolo, mercado), ...]. GGAL.BA → BYMA; BTC o BTC/USDT → cripto;
+    si el ticker existe en varios mercados (GGAL), devuelve todos."""
+    s = re.sub(r"[^A-Za-z0-9./-]", "", raw or "").upper()
+    if not s:
+        return []
+    if "/" in s:
+        return [(s, "crypto")]
+    if s in CRYPTO_BASES:
+        return [(f"{s}/USDT", "crypto")]
+    if s.endswith(".BA"):
+        return [(s[:-3], "byma")]
+    found = [(it["symbol"], it["market"]) for it in items_of(cfg) if it["symbol"].upper() == s]
+    return found or [(s, "us")]
+
+
+def quote_text(sym, mkt, cfg, offline=False):
+    item = next((it for it in items_of(cfg) if it["symbol"].upper() == sym.upper() and it["market"] == mkt), None) \
+        or {"symbol": sym, "market": mkt, "timeframe": "4h" if mkt == "crypto" else "1d",
+            "htf": "1d" if mkt == "crypto" else "1wk"}
+    sig, df, titles = analyze(item, cfg, offline)
+    daily = df if item["timeframe"] == "1d" else fetch_ohlcv(sym, mkt, "1d", 60, offline)
+    c = daily["close"]
+    chg = lambda n: f"{c.iloc[-1] / c.iloc[-1 - n] - 1:+.1%}" if len(c) > n else "s/d"
+    cur = {"crypto": "USDT", "us": "USD", "byma": "ARS"}[mkt]
+    trend = {1: "alcista", -1: "bajista", 0: "lateral"}
+    from .strategy import prepare, trend_of
+    d = prepare(df, cfg["strategy"])
+    last = d.iloc[-1]
+    win = df.tail(50)
+    lines = [f"💹 <b>{sig.symbol}</b> ({ {'crypto': 'Cripto', 'us': 'EE.UU.', 'byma': 'BYMA'}[mkt] }): {sig.price:,.2f} {cur}",
+             f"Día {chg(1)} | 5 ruedas {chg(5)} | 1 mes {chg(21)}",
+             f"Señal: {EMOJI[sig.action]} {sig.action} (score {sig.score:+.2f})",
+             f"RSI {sig.rsi:.0f} | MACD {'↑' if last['macd_hist'] > 0 else '↓'} | Tendencia {trend[trend_of(last)]}",
+             f"Soporte {win['low'].min():,.2f} | Resistencia {win['high'].max():,.2f}",
+             f"Stop técnico (ATR): {sig.price - cfg['strategy']['atr_stop_mult'] * sig.atr:,.2f}"]
+    paper = PaperBroker(cfg["state_dir"], cfg["capital"])
+    pos = paper.position(sig.symbol)
+    if pos:
+        lines.append(f"📌 En cartera: {pos['qty']:.4f} @ {pos['avg']:,.2f} ({sig.price / pos['avg'] - 1:+.2%})")
+    lines += [f"• {r}" for r in sig.reasons]
+    if titles:
+        lines.append("📰 " + titles[0][:120])
+    return "\n".join(lines)
+
+
+def cmd_quote(cfg, raw, offline=False):
+    pairs = resolve_symbol(raw, cfg)
+    if not pairs:
+        notify("Decime qué símbolo cotizar, por ejemplo: /cotizacion GGAL")
+        return
+    blocks = []
+    for sym, mkt in pairs:
+        try:
+            blocks.append(quote_text(sym, mkt, cfg, offline))
+        except Exception as e:
+            print(f"[cotizacion] {sym} {mkt}: {e}")
+            blocks.append(f"❌ No encontré datos de {sym} en {mkt}. Para BYMA usá .BA (ej. GGAL.BA); para cripto, BTC o BTC/USDT.")
+    notify("\n\n".join(blocks) + "\n⚠️ No es consejo financiero. DYOR.")
+
+
+def cmd_portfolio(cfg, offline=False):
+    from datetime import datetime
+    j = Journal(cfg["state_dir"])
+    paper = PaperBroker(cfg["state_dir"], cfg["capital"], cfg["risk"]["fee"], cfg["risk"]["slippage"])
+    last_px = {}
+    for label, p in paper.s["positions"].items():
+        sym = label[:-3] if label.endswith(".BA") else label
+        try:
+            last_px[label] = float(fetch_ohlcv(sym, p["market"], "1d", 5, offline)["close"].iloc[-1])
+        except Exception as e:
+            print(f"[cartera] {label}: {e}")
+    notify(f"💼 <b>Cartera {datetime.now():%d/%m %H:%M}</b>\n" + "\n".join(paper_lines(paper, last_px, j)[2:]))
+
+
 def cmd_report(cfg, a):
     j = Journal(cfg["state_dir"])
     rows = [r for r in j.rows_since(a.dias) if r["mode"] == "paper"]
@@ -336,6 +414,9 @@ def main():
     r.add_argument("--resumen", action="store_true", help="un solo mensaje con toda la watchlist en cada ciclo")
     r.add_argument("--solo-operaciones", action="store_true", help="solo avisa compras y ventas, sin señales ni resumen")
     sub.add_parser("resumen-dia", help="resumen de cierre del día (no opera)")
+    q = sub.add_parser("cotizacion", help="cotización y lectura técnica de un activo")
+    q.add_argument("simbolo", nargs="?", default="")
+    sub.add_parser("cartera", help="cartera simulada con precios actuales")
 
     d = sub.add_parser("decide")
     d.add_argument("--symbol", required=True)
@@ -380,6 +461,10 @@ def main():
     elif a.cmd == "backtest":
         df = load_csv(a.csv) if a.csv else fetch_ohlcv(a.symbol, a.market, a.timeframe, 1000, a.offline)
         print(bt.report(bt.run(df, cfg["strategy"], cfg["risk"])))
+    elif a.cmd == "cotizacion":
+        cmd_quote(cfg, a.simbolo, a.offline)
+    elif a.cmd == "cartera":
+        cmd_portfolio(cfg, a.offline)
     elif a.cmd == "resumen-dia":
         cmd_daily(cfg, a.offline)
     elif a.cmd == "ccl":

@@ -1,12 +1,22 @@
-"""Notificaciones: consola + Telegram + WhatsApp (CallMeBot). Se activan solo si están configuradas."""
-import os, re, time, requests
+"""Notificaciones: consola + Telegram + WhatsApp (CallMeBot).
+Canales activos: variable NOTIFY_CHANNELS (por defecto "telegram,whatsapp"); cada uno se usa solo si está configurado."""
+import html, os, re, time, requests
+
+
+def _channels():
+    return {c.strip().lower() for c in os.getenv("NOTIFY_CHANNELS", "telegram,whatsapp").split(",") if c.strip()}
 
 
 def _telegram(text):
     token, chat = os.getenv("TELEGRAM_TOKEN"), os.getenv("TELEGRAM_CHAT_ID")
-    if token and chat:
-        requests.post(f"https://api.telegram.org/bot{token}/sendMessage",
-                      data={"chat_id": chat, "text": text, "parse_mode": "HTML"}, timeout=10)
+    if not (token and chat):
+        return
+    safe = html.escape(text, quote=False).replace("&lt;b&gt;", "<b>").replace("&lt;/b&gt;", "</b>")
+    for part in _chunks(safe, 3500):
+        r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage",
+                          data={"chat_id": chat, "text": part, "parse_mode": "HTML"}, timeout=15)
+        if r.status_code != 200:
+            raise RuntimeError(f"Telegram respondió {r.status_code}: {r.text[:150]}")
 
 
 def _whatsapp(text):
@@ -44,7 +54,10 @@ def _chunks(text, limit):
 
 def notify(text):
     print(text.replace("<b>", "").replace("</b>", ""), "\n")
+    active = _channels()
     for name, fn in (("telegram", _telegram), ("whatsapp", _whatsapp)):
+        if name not in active:
+            continue
         try:
             fn(text)
         except Exception as e:
