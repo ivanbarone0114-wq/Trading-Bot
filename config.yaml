@@ -50,7 +50,7 @@ strategy:
 
 risk:
   risk_per_trade: 0.02       # 2% del capital en riesgo por operación
-  max_position_pct: 0.0.34     # máx. 20% del capital en un solo activo
+  max_position_pct: 0.34     # máx. 20% del capital en un solo activo
   max_open_positions: 5
   max_daily_loss_pct: 0.03   # corta el día si pierde 3%
   fee: 0.006
