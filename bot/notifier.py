@@ -52,6 +52,22 @@ def _chunks(text, limit):
     return parts
 
 
+def send_document(path, caption=""):
+    """Manda un archivo por Telegram (WhatsApp/CallMeBot no admite archivos)."""
+    token, chat = os.getenv("TELEGRAM_TOKEN"), os.getenv("TELEGRAM_CHAT_ID")
+    if "telegram" not in _channels() or not (token and chat) or not os.path.exists(path):
+        return
+    try:
+        with open(path, "rb") as f:
+            r = requests.post(f"https://api.telegram.org/bot{token}/sendDocument",
+                              data={"chat_id": chat, "caption": caption[:1000]},
+                              files={"document": (os.path.basename(path), f, "text/markdown")}, timeout=30)
+        if r.status_code != 200:
+            print(f"[telegram] error al enviar archivo: {r.status_code} {r.text[:150]}")
+    except Exception as e:
+        print(f"[telegram] error al enviar archivo: {e}")
+
+
 def notify(text):
     print(text.replace("<b>", "").replace("</b>", ""), "\n")
     active = _channels()

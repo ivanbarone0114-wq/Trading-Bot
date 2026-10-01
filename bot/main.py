@@ -22,7 +22,8 @@ from .advisor import advise
 from .notifier import notify
 from .brokers.paper import PaperBroker
 from . import backtest as bt
-from .ccl import ccl_lines
+from .ccl import ccl_lines, implied_ccl
+from .informe import build_report, equity_by_market, save_equity_snapshot
 
 
 def load_cfg(path):
@@ -114,6 +115,7 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False):
     risk = RiskManager(cfg["risk"], cfg["capital"], cfg["state_dir"])
     brokers = get_brokers(cfg, mode, confirm_live) if mode in ("paper", "live") else None
     results, last_px, px_cache = [], {}, {}
+    ops = {"buy": 0, "sell": 0}
 
     # 1) analizar todo
     for item in items_of(cfg):
@@ -149,8 +151,10 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False):
             elif sig.action == "SELL":
                 why, px = "señal", sig.price
             if why and confirm(f"[{mode}] VENDER {pos['qty']:.6f} {sym} @ {px:,.4f} ({why}).", cfg, mode):
-                pnl, fill = b.sell(sym, mkt, pos["qty"], px)
-                j.log(kind="trade", mode=mode, symbol=sym, market=mkt, side="sell", qty=pos["qty"],
+                sold_qty = float(pos["qty"])  # se guarda antes: la venta modifica la posición
+                ops["sell"] += 1
+                pnl, fill = b.sell(sym, mkt, sold_qty, px)
+                j.log(kind="trade", mode=mode, symbol=sym, market=mkt, side="sell", qty=sold_qty,
                       price=fill, pnl=pnl if pnl is not None else "", note=why)
                 notify(f"🔴 [{mode}] Venta {sym} @ {fill:,.4f} ({why})" + (f" | PnL {pnl:+,.2f}" if pnl is not None else ""))
 
@@ -179,6 +183,7 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False):
                     continue
                 j.log(kind="trade", mode=mode, symbol=sym, market=mkt, side="buy", qty=qty, price=fill,
                       stop=sig.stop, target=sig.target, note=f"score {sig.score}")
+                ops["buy"] += 1
                 notify(f"🟢 [{mode}] Compra {qty:.4f} {sym} @ {fill:,.4f} | score {sig.score:+.2f} | "
                        f"stop {sig.stop:,.4f} | obj {sig.target:,.4f}")
 
@@ -189,6 +194,7 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False):
             extra = ccl_lines(cfg, px_cache, offline) + extra
         notify(f"📊 <b>Resumen {datetime.now():%d/%m %H:%M}</b>\n"
                + "\n".join(ranking_lines([r[1] for r in results]) + extra) + "\n⚠️ No es consejo financiero. DYOR.")
+    return ops, len(results)
 
 
 def paper_lines(paper, last_px, j):
@@ -241,6 +247,11 @@ def cmd_daily(cfg, offline=False):
     extra = ops_block
     if cfg.get("ccl", {}).get("enabled", True):
         extra += ccl_lines(cfg, px_cache, offline)
+    try:
+        _, ccl_avg = implied_ccl(cfg, px_cache, offline)
+        save_equity_snapshot(cfg["state_dir"], equity_by_market(paper, last_px), ccl_avg)
+    except Exception as e:
+        print(f"[equity] {e}")
     extra += paper_lines(paper, last_px, j)
     notify(f"🌙 <b>Resumen del día {datetime.now():%d/%m}</b>\n" + "\n".join(lines + extra)
            + "\n⚠️ No es consejo financiero. DYOR.")
@@ -310,18 +321,56 @@ def cmd_quote(cfg, raw, offline=False):
     notify("\n\n".join(blocks) + "\n⚠️ No es consejo financiero. DYOR.")
 
 
-def cmd_portfolio(cfg, offline=False):
-    from datetime import datetime
-    j = Journal(cfg["state_dir"])
-    paper = PaperBroker(cfg["state_dir"], cfg["capital"], cfg["risk"]["fee"], cfg["risk"]["slippage"])
+def current_prices(paper, offline=False):
+    """Último precio de cada posición abierta."""
     last_px = {}
     for label, p in paper.s["positions"].items():
         sym = label[:-3] if label.endswith(".BA") else label
         try:
             last_px[label] = float(fetch_ohlcv(sym, p["market"], "1d", 5, offline)["close"].iloc[-1])
         except Exception as e:
-            print(f"[cartera] {label}: {e}")
+            print(f"[precios] {label}: {e}")
+    return last_px
+
+
+def cmd_portfolio(cfg, offline=False):
+    from datetime import datetime
+    j = Journal(cfg["state_dir"])
+    paper = PaperBroker(cfg["state_dir"], cfg["capital"], cfg["risk"]["fee"], cfg["risk"]["slippage"])
+    last_px = current_prices(paper, offline)
     notify(f"💼 <b>Cartera {datetime.now():%d/%m %H:%M}</b>\n" + "\n".join(paper_lines(paper, last_px, j)[2:]))
+
+
+def cmd_informe(cfg, dias=7, offline=False):
+    from datetime import datetime
+    from .notifier import send_document
+    j = Journal(cfg["state_dir"])
+    paper = PaperBroker(cfg["state_dir"], cfg["capital"], cfg["risk"]["fee"], cfg["risk"]["slippage"])
+    ccl_rows = None
+    if cfg.get("ccl", {}).get("enabled", True):
+        try:
+            ccl_rows, _ = implied_ccl(cfg, {}, offline)
+            ccl_rows = [(n, v, note) for n, v, note in ccl_rows]
+        except Exception as e:
+            print(f"[informe] ccl: {e}")
+    md, sm = build_report(cfg, paper, j, analyze, items_of(cfg), dias, offline, ccl_rows)
+    os.makedirs(cfg["state_dir"], exist_ok=True)
+    fname = f"informe_{datetime.now():%Y-%m-%d}.md"
+    for path in (os.path.join(cfg["state_dir"], fname), os.path.join(cfg["state_dir"], "informe.md")):
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(md)
+    st = sm["stats"]
+    lines = [f"📑 <b>Informe de análisis, últimos {dias} días</b>"]
+    for m in ("crypto", "us", "byma"):
+        cap = sm["cap"][m]
+        if cap:
+            lines.append(f"{m}: patrimonio {sm['eq'].get(m, 0):,.2f} ({sm['eq'].get(m, 0) / cap - 1:+.2%})")
+    lines.append(f"Operaciones cerradas: {sm['closed']}" + (f" | acierto {st['win_rate']:.0%}" if st else ""))
+    lines.append(f"Posiciones abiertas: {sm['open']}")
+    lines.append("📎 El informe completo va adjunto en Telegram y queda en GitHub: state/informe.md. "
+                 "Pegalo en un chat de análisis junto con el prompt que trae al final.")
+    notify("\n".join(lines))
+    send_document(os.path.join(cfg["state_dir"], fname), f"Informe {datetime.now():%d/%m/%Y}")
 
 
 def cmd_report(cfg, a):
@@ -344,7 +393,7 @@ def cmd_report(cfg, a):
         motivos[r["note"]] = motivos.get(r["note"], 0) + 1
     if motivos:
         lines.append("Cierres por: " + ", ".join(f"{k} {v}" for k, v in motivos.items()))
-    lines += paper_lines(paper, {}, j)[1:]
+    lines += paper_lines(paper, current_prices(paper, getattr(a, "offline", False)), j)[1:]
     if cfg.get("ccl", {}).get("enabled", True):
         lines += ccl_lines(cfg, {}, getattr(a, "offline", False))
     lines.append("⚠️ No es consejo financiero. DYOR.")
@@ -413,10 +462,13 @@ def main():
     r.add_argument("--confirm-live", action="store_true")
     r.add_argument("--resumen", action="store_true", help="un solo mensaje con toda la watchlist en cada ciclo")
     r.add_argument("--solo-operaciones", action="store_true", help="solo avisa compras y ventas, sin señales ni resumen")
+    r.add_argument("--confirmar", action="store_true", help="al terminar, avisa cuántas operaciones hizo")
     sub.add_parser("resumen-dia", help="resumen de cierre del día (no opera)")
     q = sub.add_parser("cotizacion", help="cotización y lectura técnica de un activo")
     q.add_argument("simbolo", nargs="?", default="")
     sub.add_parser("cartera", help="cartera simulada con precios actuales")
+    inf = sub.add_parser("informe", help="informe de análisis en Markdown con prompt para un chat de análisis")
+    inf.add_argument("--dias", type=int, default=7)
 
     d = sub.add_parser("decide")
     d.add_argument("--symbol", required=True)
@@ -448,7 +500,10 @@ def main():
         mode = a.mode or cfg["mode"]
         while True:
             try:
-                cycle(cfg, mode, a.offline, a.confirm_live, a.resumen, a.solo_operaciones)
+                ops, n = cycle(cfg, mode, a.offline, a.confirm_live, a.resumen, a.solo_operaciones)
+                if a.confirmar:
+                    notify(f"✅ Ciclo ejecutado: {n} activos analizados, {ops['buy']} compras y {ops['sell']} ventas."
+                           + ("" if ops["buy"] or ops["sell"] else " Sin señales nuevas para operar."))
                 if mode == "paper":
                     maybe_weekly_report(cfg, a.offline)
             except Exception as e:  # que un error de red no corte el loop
@@ -463,6 +518,8 @@ def main():
         print(bt.report(bt.run(df, cfg["strategy"], cfg["risk"])))
     elif a.cmd == "cotizacion":
         cmd_quote(cfg, a.simbolo, a.offline)
+    elif a.cmd == "informe":
+        cmd_informe(cfg, a.dias, a.offline)
     elif a.cmd == "cartera":
         cmd_portfolio(cfg, a.offline)
     elif a.cmd == "resumen-dia":
