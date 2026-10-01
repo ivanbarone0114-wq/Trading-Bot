@@ -26,9 +26,23 @@ from .ccl import ccl_lines, implied_ccl
 from .informe import build_report, equity_by_market, save_equity_snapshot
 
 
+def _numbers(d):
+    """Acepta números escritos con coma decimal ("0,34") en la configuración."""
+    for k, v in d.items():
+        if isinstance(v, dict):
+            _numbers(v)
+        elif isinstance(v, str) and re.fullmatch(r"\s*-?\d+([.,]\d+)?\s*", v):
+            d[k] = float(v.strip().replace(",", "."))
+            print(f"[config] '{k}: {v}' tiene coma decimal; se toma como {d[k]}. Conviene escribirlo con punto.")
+
+
 def load_cfg(path):
-    with open(path) as f:
-        return yaml.safe_load(f)
+    with open(path, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f)
+    for sec in ("capital", "risk", "strategy"):
+        if isinstance(cfg.get(sec), dict):
+            _numbers(cfg[sec])
+    return cfg
 
 
 def analyze(item, cfg, offline):
