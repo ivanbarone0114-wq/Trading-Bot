@@ -4,7 +4,6 @@ name: Bot de trading (paper)
 on:
   schedule:
     # Operaciones cada 25 min, lunes a viernes, de 10:30 a 18:00 (hora argentina).
-    # Cubre BYMA (11 a 17 h) y Wall Street todo el año, con o sin horario de verano de EE.UU.
     - cron: "30 13,18 * * 1-5"
     - cron: "55 13,18 * * 1-5"
     - cron: "20 14,19 * * 1-5"
@@ -26,14 +25,23 @@ on:
       comando:
         description: "Qué ejecutar"
         type: choice
-        options: [ciclo, resumen, reporte, ccl]
+        options: [ciclo, resumen, reporte, ccl, cotizacion, cartera]
         default: ciclo
+      simbolo:
+        description: "Símbolo (solo para cotizacion), ej: GGAL.BA, NVDA, BTC"
+        required: false
+        default: ""
+      canal:
+        description: "Canal de respuesta (vacío = todos; telegram = solo Telegram)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
 
+# Los ciclos que modifican la cartera van en fila; las consultas corren aparte y no esperan.
 concurrency:
-  group: trading-bot
+  group: ${{ (github.event_name == 'workflow_dispatch' && inputs.comando != 'ciclo') && format('consulta-{0}', github.run_id) || 'trading-bot' }}
   cancel-in-progress: false
 
 jobs:
@@ -46,6 +54,11 @@ jobs:
       WHATSAPP_APIKEY: ${{ secrets.WHATSAPP_APIKEY }}
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      NOTIFY_CHANNELS: ${{ inputs.canal || vars.NOTIFY_CHANNELS || 'telegram,whatsapp' }}
+      CMD_INPUT: ${{ inputs.comando }}
+      SIMBOLO: ${{ inputs.simbolo }}
+      EVENTO: ${{ github.event_name }}
+      CRON: ${{ github.event.schedule }}
     steps:
       - uses: actions/checkout@v4
 
@@ -59,23 +72,26 @@ jobs:
 
       - name: Ejecutar bot
         run: |
-          CMD="${{ github.event.inputs.comando }}"
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            case "${{ github.event.schedule }}" in
+          CMD="$CMD_INPUT"
+          if [ "$EVENTO" = "schedule" ]; then
+            case "$CRON" in
               "0 1 * * 2-6") CMD=resumen ;;
               "0 23 * * 0")  CMD=reporte ;;
               *)             CMD=ciclo ;;
             esac
           fi
-          echo "Comando: $CMD"
+          echo "Comando: $CMD | Canales: $NOTIFY_CHANNELS"
           case "$CMD" in
-            resumen) python -m bot.main resumen-dia ;;
-            reporte) python -m bot.main reporte ;;
-            ccl)     python -m bot.main ccl --enviar ;;
-            *)       python -m bot.main run --mode paper --solo-operaciones ;;
+            resumen)    python -m bot.main resumen-dia ;;
+            reporte)    python -m bot.main reporte ;;
+            ccl)        python -m bot.main ccl --enviar ;;
+            cotizacion) python -m bot.main cotizacion "$SIMBOLO" ;;
+            cartera)    python -m bot.main cartera ;;
+            *)          python -m bot.main run --mode paper --solo-operaciones ;;
           esac
 
       - name: Guardar cartera y bitácora
+        if: ${{ github.event_name == 'schedule' || inputs.comando == 'ciclo' }}
         run: |
           git config user.name "trading-bot"
           git config user.email "trading-bot@users.noreply.github.com"
