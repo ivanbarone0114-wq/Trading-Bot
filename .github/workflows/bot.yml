@@ -18,17 +18,17 @@ on:
     - cron: "5 18 * * 1-5"
     # Resumen del día: 22:00 hora argentina, de lunes a viernes.
     - cron: "0 1 * * 2-6"
-    # Reporte semanal: domingos 20:00 hora argentina.
+    # Reporte semanal + informe de análisis: domingos 20:00 hora argentina.
     - cron: "0 23 * * 0"
   workflow_dispatch:
     inputs:
       comando:
         description: "Qué ejecutar"
         type: choice
-        options: [ciclo, resumen, reporte, ccl, cotizacion, cartera]
+        options: [ciclo, resumen, reporte, informe, ccl, cotizacion, cartera]
         default: ciclo
       simbolo:
-        description: "Símbolo (solo para cotizacion), ej: GGAL.BA, NVDA, BTC"
+        description: "Símbolo para cotizacion (ej: GGAL.BA, NVDA, BTC) o días para informe (ej: 30)"
         required: false
         default: ""
       canal:
@@ -83,15 +83,23 @@ jobs:
           echo "Comando: $CMD | Canales: $NOTIFY_CHANNELS"
           case "$CMD" in
             resumen)    python -m bot.main resumen-dia ;;
-            reporte)    python -m bot.main reporte ;;
+            reporte)    python -m bot.main reporte && python -m bot.main informe --dias 7 ;;
+            informe)
+              DIAS=$(echo "$SIMBOLO" | tr -cd '0-9'); DIAS=${DIAS:-7}
+              python -m bot.main informe --dias "$DIAS" ;;
             ccl)        python -m bot.main ccl --enviar ;;
             cotizacion) python -m bot.main cotizacion "$SIMBOLO" ;;
             cartera)    python -m bot.main cartera ;;
-            *)          python -m bot.main run --mode paper --solo-operaciones ;;
+            *)
+              if [ "$EVENTO" = "schedule" ]; then
+                python -m bot.main run --mode paper --solo-operaciones
+              else
+                python -m bot.main run --mode paper --solo-operaciones --confirmar
+              fi ;;
           esac
 
       - name: Guardar cartera y bitácora
-        if: ${{ github.event_name == 'schedule' || inputs.comando == 'ciclo' }}
+        if: ${{ github.event_name == 'schedule' || inputs.comando == 'ciclo' || inputs.comando == 'informe' || inputs.comando == 'reporte' }}
         run: |
           git config user.name "trading-bot"
           git config user.email "trading-bot@users.noreply.github.com"
