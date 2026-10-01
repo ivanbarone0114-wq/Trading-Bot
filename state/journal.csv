@@ -91,3 +91,5 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note
 2026-10-01T14:42:27+00:00,alert,paper,LOMA.BA,byma,SELL,,2882.5,,,,score -0.5
 2026-10-01T14:42:30+00:00,alert,paper,COME.BA,byma,SELL,,39.459999084472656,,,,score -0.5
 2026-10-01T14:42:30+00:00,alert,paper,BYMA.BA,byma,SELL,,244.0,,,,score -0.5
+2026-10-01T15:40:22+00:00,alert,paper,TXAR.BA,byma,SELL,,660.5,,,,score -0.425
+2026-10-01T15:40:41+00:00,alert,paper,EDN.BA,byma,SELL,,1651.0,,,,score -0.5
