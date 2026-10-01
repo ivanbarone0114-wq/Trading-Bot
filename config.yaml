@@ -3,9 +3,9 @@ mode: paper              # alerts | paper | live
 state_dir: state         # cartera simulada, bitácora y alertas
 
 capital:                 # capital asignado por mercado (en la moneda de cada mercado)
-  crypto: 1000           # USDT
-  us: 1000               # USD
-  byma: 1000000          # ARS
+  crypto: 100           # USDT
+  us: 100               # USD
+  byma: 150000          # ~100 USD al CCL
 
 watchlist:
   # --- Cripto ---
@@ -49,11 +49,11 @@ strategy:
   weights: {trend: 2.0, macd: 1.5, rsi: 1.0, patterns: 1.0, news: 0.75}
 
 risk:
-  risk_per_trade: 0.01       # 1% del capital en riesgo por operación
-  max_position_pct: 0.20     # máx. 20% del capital en un solo activo
-  max_open_positions: 10
+  risk_per_trade: 0.02       # 2% del capital en riesgo por operación
+  max_position_pct: 0.0.34     # máx. 20% del capital en un solo activo
+  max_open_positions: 5
   max_daily_loss_pct: 0.03   # corta el día si pierde 3%
-  fee: 0.001
+  fee: 0.006
   slippage: 0.0005
 
 news:
