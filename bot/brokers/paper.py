@@ -5,9 +5,10 @@ import json, os
 class PaperBroker:
     name = "paper"
 
-    def __init__(self, state_dir, capital, fee=0.001, slippage=0.0005):
+    def __init__(self, state_dir, capital, fee=0.001, slippage=0.0005, fees=None):
         self.path = os.path.join(state_dir, "paper_portfolio.json")
         self.fee, self.slip = fee, slippage
+        self.fees = fees or {}  # comisión distinta por mercado, ej. {"crypto": 0.001}
         if os.path.exists(self.path):
             with open(self.path) as f:
                 self.s = json.load(f)
@@ -28,7 +29,8 @@ class PaperBroker:
 
     def buy(self, symbol, market, qty, price, stop=None, target=None):
         fill = price * (1 + self.slip)
-        cost = fill * qty * (1 + self.fee)
+        fee = self.fees.get(market, self.fee)
+        cost = fill * qty * (1 + fee)
         if cost > self.s["cash"][market] + 1e-9:
             raise ValueError("Saldo simulado insuficiente")
         self.s["cash"][market] -= cost
@@ -49,8 +51,9 @@ class PaperBroker:
             raise ValueError("No hay posición para vender")
         qty = min(qty, p["qty"])
         fill = price * (1 - self.slip)
-        proceeds = fill * qty * (1 - self.fee)
-        pnl = proceeds - p["avg"] * qty * (1 + self.fee)
+        fee = self.fees.get(market, self.fee)
+        proceeds = fill * qty * (1 - fee)
+        pnl = proceeds - p["avg"] * qty * (1 + fee)
         self.s["cash"][market] += proceeds
         p["qty"] -= qty
         if p["qty"] <= 1e-12:
