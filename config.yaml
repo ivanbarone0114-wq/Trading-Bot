@@ -75,3 +75,22 @@ universe:
   us: [AAPL, MSFT, AMZN, GOOGL, META, TSLA, AVGO, AMD, NFLX, V, MA, UNH, JNJ, PFE,
        CVX, PEP, WMT, COST, DIS, CAT, BA, GLOB, BMA, PAM, CEPU, TGS, LOMA, SUPV, BBAR, TEO]
   byma: [TGNO4, CRES, LOMA, EDN, SUPV, BBAR, TECO2, COME, BYMA, VALO, MIRG, TRAN]
+# ============ CEDEARs ============
+# Se usan para buscar desvíos contra el dólar CCL (posibles arbitrajes) y, si trade es true,
+# también se analizan y operan en paper como BYMA (en pesos).
+# ratio = cuántos CEDEARs equivalen a 1 acción. VERIFICAR en la tabla oficial: cambian con splits.
+cedears:
+  trade: true
+  alert_pct: 0.03        # avisa si el CCL implícito se desvía más de 3% del de referencia
+  list:
+    - {symbol: AAPL,  ratio: 20}
+    - {symbol: MSFT,  ratio: 30}
+    - {symbol: GOOGL, ratio: 58}
+    - {symbol: AMZN,  ratio: 144}
+    - {symbol: META,  ratio: 24}
+    - {symbol: NVDA,  ratio: 24}
+    - {symbol: TSLA,  ratio: 15}
+    - {symbol: KO,    ratio: 5}
+    - {symbol: MELI,  ratio: 120}
+    - {symbol: SPY,   ratio: 20}
+    - {symbol: QQQ,   ratio: 20}
