@@ -23,6 +23,10 @@ from .notifier import notify
 from .brokers.paper import PaperBroker
 from . import backtest as bt
 from .ccl import ccl_lines, implied_ccl
+from .cedears import arbitrage, cedear_list
+from .explain import explain_entry, explain_exit, dumps
+from .panel import record_equity, write_panel
+from .strategy import prepare
 from .informe import build_report, equity_by_market, save_equity_snapshot
 
 
@@ -98,6 +102,11 @@ def items_of(cfg):
                 items.append({"symbol": sym, "market": mkt,
                               "timeframe": uni.get("timeframe", "4h" if mkt == "crypto" else "1d"),
                               "htf": uni.get("htf", "1d" if mkt == "crypto" else "1wk")})
+    if (cfg.get("cedears") or {}).get("trade", True):
+        for c in cedear_list(cfg):
+            if (c["symbol"], "byma") not in seen:
+                seen.add((c["symbol"], "byma"))
+                items.append({"symbol": c["symbol"], "market": "byma", "timeframe": "1d", "htf": "1wk"})
     return items
 
 
@@ -167,9 +176,13 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False):
             if why and confirm(f"[{mode}] VENDER {pos['qty']:.6f} {sym} @ {px:,.4f} ({why}).", cfg, mode):
                 sold_qty = float(pos["qty"])  # se guarda antes: la venta modifica la posición
                 ops["sell"] += 1
+                try:
+                    detail = dumps(explain_exit(why, dict(pos), px, sig, None))
+                except Exception as e:
+                    detail = ""; print(f"[{sym}] sin detalle: {e}")
                 pnl, fill = b.sell(sym, mkt, sold_qty, px)
                 j.log(kind="trade", mode=mode, symbol=sym, market=mkt, side="sell", qty=sold_qty,
-                      price=fill, pnl=pnl if pnl is not None else "", note=why)
+                      price=fill, pnl=pnl if pnl is not None else "", note=why, detail=detail)
                 notify(f"🔴 [{mode}] Venta {sym} @ {fill:,.4f} ({why})" + (f" | PnL {pnl:+,.2f}" if pnl is not None else ""))
 
         # 3) entradas: las señales más fuertes primero
@@ -195,8 +208,12 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False):
                 except Exception as e:
                     print(f"[{sym}] compra no ejecutada: {e}")
                     continue
+                try:
+                    detail = dumps(explain_entry(sig, prepare(df, cfg["strategy"]).iloc[-1], df, cfg))
+                except Exception as e:
+                    detail = ""; print(f"[{sym}] sin detalle: {e}")
                 j.log(kind="trade", mode=mode, symbol=sym, market=mkt, side="buy", qty=qty, price=fill,
-                      stop=sig.stop, target=sig.target, note=f"score {sig.score}")
+                      stop=sig.stop, target=sig.target, note=f"score {sig.score}", detail=detail)
                 ops["buy"] += 1
                 notify(f"🟢 [{mode}] Compra {qty:.4f} {sym} @ {fill:,.4f} | score {sig.score:+.2f} | "
                        f"stop {sig.stop:,.4f} | obj {sig.target:,.4f}")
@@ -208,7 +225,51 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False):
             extra = ccl_lines(cfg, px_cache, offline) + extra
         notify(f"📊 <b>Resumen {datetime.now():%d/%m %H:%M}</b>\n"
                + "\n".join(ranking_lines([r[1] for r in results]) + extra) + "\n⚠️ No es consejo financiero. DYOR.")
+
+    if results:
+        arb_alerts(cfg, px_cache, offline)
+    if mode == "paper" and brokers and results:
+        refresh_panel(cfg, brokers["crypto"], j, results, px_cache, last_px, offline, record=True)
     return ops, len(results)
+
+
+def refresh_panel(cfg, paper, j, results, px_cache, last_px, offline=False, record=False):
+    try:
+        if record:
+            _, ccl = implied_ccl(cfg, px_cache, offline)
+            record_equity(cfg["state_dir"], paper, last_px, ccl)
+        write_panel(cfg, paper, j, results, px_cache, last_px, offline)
+    except Exception as e:
+        print(f"[panel] no se pudo generar: {e}")
+
+
+def arb_alerts(cfg, px_cache, offline=False):
+    """Avisa una vez por día y por CEDEAR cuando el CCL implícito se desvía del de referencia."""
+    if not cedear_list(cfg):
+        return
+    from datetime import datetime
+    try:
+        rows, ref, src, thr = arbitrage(cfg, px_cache, offline)
+    except Exception as e:
+        print(f"[arbitraje] {e}")
+        return
+    path = os.path.join(cfg["state_dir"], "alerts.json")
+    seen = json.load(open(path)) if os.path.exists(path) else {}
+    today = datetime.now().strftime("%Y-%m-%d")
+    msgs = []
+    for r in rows:
+        if r["kind"] not in ("cheap", "rich"):
+            continue
+        key = f"{today}|{r['kind']}"
+        if seen.get("ARB:" + r["symbol"]) == key:
+            continue
+        seen["ARB:" + r["symbol"]] = key
+        msgs.append(f"{'🟢' if r['kind'] == 'cheap' else '🔴'} <b>{r['symbol']}</b>: CCL implícito ${r['ccl']:,.2f} "
+                    f"({r['dev']:+.1%} vs ${ref:,.2f}). {r['read']}")
+    if msgs:
+        json.dump(seen, open(path, "w"), indent=2)
+        notify("⚖️ <b>Desvíos de CEDEARs contra el CCL</b>\n" + "\n".join(msgs)
+               + "\nPrecios con demora y sin comisiones: verificá en tu broker antes de operar.")
 
 
 def paper_lines(paper, last_px, j):
@@ -226,12 +287,8 @@ def paper_lines(paper, last_px, j):
     return out
 
 
-def cmd_daily(cfg, offline=False):
-    """Resumen de cierre: señales, operaciones del día, CCL y cartera. No opera."""
-    from datetime import datetime
-    j = Journal(cfg["state_dir"])
-    paper = PaperBroker(cfg["state_dir"], cfg["capital"], cfg["risk"]["fee"], cfg["risk"]["slippage"])
-    sigs, px_cache, last_px = [], {}, {}
+def scan_all(cfg, offline=False):
+    results, px_cache, last_px = [], {}, {}
     for item in items_of(cfg):
         try:
             sig, df, _ = analyze(item, cfg, offline)
@@ -241,7 +298,25 @@ def cmd_daily(cfg, offline=False):
         px = float(df["close"].iloc[-1])
         px_cache[sig.symbol] = (px, df.index[-1].date())
         last_px[sig.symbol] = px
-        sigs.append(sig)
+        results.append((item, sig, df))
+    return results, px_cache, last_px
+
+
+def cmd_panel(cfg, offline=False):
+    j = Journal(cfg["state_dir"])
+    paper = PaperBroker(cfg["state_dir"], cfg["capital"], cfg["risk"]["fee"], cfg["risk"]["slippage"])
+    results, px_cache, last_px = scan_all(cfg, offline)
+    refresh_panel(cfg, paper, j, results, px_cache, last_px, offline)
+    print("Panel actualizado: state/panel.html")
+
+
+def cmd_daily(cfg, offline=False):
+    """Resumen de cierre: señales, operaciones del día, CCL y cartera. No opera."""
+    from datetime import datetime
+    j = Journal(cfg["state_dir"])
+    paper = PaperBroker(cfg["state_dir"], cfg["capital"], cfg["risk"]["fee"], cfg["risk"]["slippage"])
+    results, px_cache, last_px = scan_all(cfg, offline)
+    sigs = [r[1] for r in results]
     lines = ranking_lines(sigs)
 
     today = datetime.now().date()
@@ -266,6 +341,7 @@ def cmd_daily(cfg, offline=False):
         save_equity_snapshot(cfg["state_dir"], equity_by_market(paper, last_px), ccl_avg)
     except Exception as e:
         print(f"[equity] {e}")
+    refresh_panel(cfg, paper, j, results, px_cache, last_px, offline)
     extra += paper_lines(paper, last_px, j)
     notify(f"🌙 <b>Resumen del día {datetime.now():%d/%m}</b>\n" + "\n".join(lines + extra)
            + "\n⚠️ No es consejo financiero. DYOR.")
@@ -481,6 +557,7 @@ def main():
     q = sub.add_parser("cotizacion", help="cotización y lectura técnica de un activo")
     q.add_argument("simbolo", nargs="?", default="")
     sub.add_parser("cartera", help="cartera simulada con precios actuales")
+    sub.add_parser("panel", help="regenera el panel web (state/panel.html)")
     inf = sub.add_parser("informe", help="informe de análisis en Markdown con prompt para un chat de análisis")
     inf.add_argument("--dias", type=int, default=7)
 
@@ -534,6 +611,8 @@ def main():
         cmd_quote(cfg, a.simbolo, a.offline)
     elif a.cmd == "informe":
         cmd_informe(cfg, a.dias, a.offline)
+    elif a.cmd == "panel":
+        cmd_panel(cfg, a.offline)
     elif a.cmd == "cartera":
         cmd_portfolio(cfg, a.offline)
     elif a.cmd == "resumen-dia":

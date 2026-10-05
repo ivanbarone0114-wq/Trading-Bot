@@ -18,6 +18,9 @@ class Signal:
     patterns: str
     reasons: list = field(default_factory=list)
     bar_time: str = ""
+    components: dict = field(default_factory=dict)   # aporte de cada factor al score
+    htf: int = 0                                      # tendencia de la temporalidad mayor
+    news: float | None = None
 
     def text(self):
         emoji = {"BUY": "🟢", "SELL": "🔴", "HOLD": "⚪"}[self.action]
@@ -96,8 +99,10 @@ def evaluate_row(df, i, cfg, symbol="", news_score=None, htf=0):
     stop = price - dist if action == "BUY" else None
     target = price + cfg["reward_risk"] * dist if action == "BUY" else None
 
+    tw = sum(weights.values())
+    contrib = {k: round(float(weights[k] * comp[k] / tw), 3) for k in weights}
     return Signal(symbol, action, round(float(score), 3), price, stop, target, float(r), a,
-                  row["patterns"], reasons, str(df.index[i]))
+                  row["patterns"], reasons, str(df.index[i]), contrib, int(htf or 0), news_score)
 
 
 def evaluate(df, cfg, symbol="", news_score=None, df_htf=None):

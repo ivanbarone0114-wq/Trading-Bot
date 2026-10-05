@@ -2,7 +2,7 @@
 import csv, os
 from datetime import datetime, timezone
 
-FIELDS = ["time", "kind", "mode", "symbol", "market", "side", "qty", "price", "stop", "target", "pnl", "note"]
+FIELDS = ["time", "kind", "mode", "symbol", "market", "side", "qty", "price", "stop", "target", "pnl", "note", "detail"]
 
 
 class Journal:
@@ -12,6 +12,23 @@ class Journal:
         if not os.path.exists(self.path):
             with open(self.path, "w", newline="") as f:
                 csv.DictWriter(f, FIELDS).writeheader()
+        else:
+            self._migrate()
+
+    def _migrate(self):
+        """Agrega columnas nuevas a bitácoras creadas con versiones anteriores."""
+        with open(self.path, newline="") as f:
+            rows = list(csv.DictReader(f))
+            header = rows[0].keys() if rows else None
+        with open(self.path, newline="") as f:
+            first = f.readline().strip().split(",")
+        if first == FIELDS:
+            return
+        with open(self.path, "w", newline="") as f:
+            w = csv.DictWriter(f, FIELDS)
+            w.writeheader()
+            for r in rows:
+                w.writerow({k: r.get(k, "") or "" for k in FIELDS})
 
     def log(self, **kw):
         row = {k: kw.get(k, "") for k in FIELDS}
