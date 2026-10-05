@@ -9,8 +9,11 @@ capital:                 # capital asignado por mercado (en la moneda de cada me
 
 watchlist:
   # --- Cripto ---
-  - {symbol: BTC/USDT, market: crypto, timeframe: 4h, htf: 1d, keywords: [bitcoin, btc]}
-  - {symbol: ETH/USDT, market: crypto, timeframe: 4h, htf: 1d, keywords: [ethereum]}
+   - {symbol: BTC/USDT, market: crypto, timeframe: 15m, htf: 1h, keywords: [bitcoin, btc]}
+  - {symbol: ETH/USDT, market: crypto, timeframe: 15m, htf: 1h, keywords: [ethereum]}
+  - {symbol: SOL/USDT, market: crypto, timeframe: 15m, htf: 1h, keywords: [solana]}
+  - {symbol: XRP/USDT, market: crypto, timeframe: 15m, htf: 1h, keywords: [xrp, ripple]}
+
 
   # --- BYMA (acciones locales, en ARS) ---
   - {symbol: GGAL,  market: byma, timeframe: 1d, htf: 1wk, keywords: [galicia, merval]}
@@ -94,3 +97,14 @@ cedears:
     - {symbol: MELI,  ratio: 120}
     - {symbol: SPY,   ratio: 20}
     - {symbol: QQQ,   ratio: 20}
+strategy_overrides:
+  crypto:
+    ema_fast: 9
+    ema_slow: 21
+    atr_stop_mult: 1.5
+    reward_risk: 1.5
+    threshold: 0.30
+fees:
+  crypto: 0.001
+  us: 0.006
+  byma: 0.006
