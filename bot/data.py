@@ -4,7 +4,7 @@ import zlib
 import numpy as np
 import pandas as pd
 
-YF_INTERVAL = {"1h": ("1h", "730d"), "4h": ("1h", "730d"), "1d": ("1d", "5y"), "1wk": ("1wk", "10y")}
+YF_INTERVAL = {"5m": ("5m", "30d"), "15m": ("15m", "60d"), "30m": ("30m", "60d"), "1h": ("1h", "730d"), "4h": ("1h", "730d"), "1d": ("1d", "5y"), "1wk": ("1wk", "10y")}
 COLS = ["open", "high", "low", "close", "volume"]
 
 

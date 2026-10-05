@@ -49,6 +49,18 @@ def load_cfg(path):
     return cfg
 
 
+def strategy_for(cfg, market):
+    """Estrategia general con los ajustes propios de cada mercado (strategy_overrides)."""
+    import copy
+    st = copy.deepcopy(cfg["strategy"])
+    for k, v in ((cfg.get("strategy_overrides") or {}).get(market) or {}).items():
+        if isinstance(v, dict) and isinstance(st.get(k), dict):
+            st[k].update(v)
+        else:
+            st[k] = v
+    return st
+
+
 def analyze(item, cfg, offline):
     df = fetch_ohlcv(item["symbol"], item["market"], item["timeframe"], 500, offline)
     df_htf = fetch_ohlcv(item["symbol"], item["market"], item["htf"], 200, offline) if item.get("htf") else None
@@ -56,12 +68,12 @@ def analyze(item, cfg, offline):
     if cfg["news"]["enabled"] and not offline:
         ns, titles = news_sentiment(item.get("keywords"), cfg["news"]["max_items"])
     label = item["symbol"] + ".BA" if item["market"] == "byma" and not item["symbol"].endswith(".BA") else item["symbol"]
-    sig = evaluate(df, cfg["strategy"], label, ns, df_htf)
+    sig = evaluate(df, strategy_for(cfg, item["market"]), label, ns, df_htf)
     return sig, df, titles
 
 
 def get_brokers(cfg, mode, confirm_live):
-    paper = PaperBroker(cfg["state_dir"], cfg["capital"], cfg["risk"]["fee"], cfg["risk"]["slippage"])
+    paper = PaperBroker(cfg["state_dir"], cfg["capital"], cfg["risk"]["fee"], cfg["risk"]["slippage"], cfg.get("fees"))
     if mode != "live":
         return {"crypto": paper, "us": paper, "byma": paper}
     if not (cfg["live"]["enabled"] and confirm_live):
@@ -90,8 +102,12 @@ def alerted_before(state_dir, sig):
     return False
 
 
-def items_of(cfg):
-    """Watchlist + universo de acciones a escanear (sin duplicados)."""
+def items_of(cfg, markets=None):
+    """Watchlist + universo + CEDEARs (sin duplicados). markets filtra, ej. {"crypto"}."""
+    return [it for it in _all_items(cfg) if not markets or it["market"] in markets]
+
+
+def _all_items(cfg):
     items = list(cfg.get("watchlist") or [])
     seen = {(w["symbol"], w["market"]) for w in items}
     uni = cfg.get("universe") or {}
@@ -133,7 +149,7 @@ def ranking_lines(sigs, full_limit=14, top=5):
     return out
 
 
-def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False):
+def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False, markets=None):
     j = Journal(cfg["state_dir"])
     risk = RiskManager(cfg["risk"], cfg["capital"], cfg["state_dir"])
     brokers = get_brokers(cfg, mode, confirm_live) if mode in ("paper", "live") else None
@@ -141,7 +157,7 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False):
     ops = {"buy": 0, "sell": 0}
 
     # 1) analizar todo
-    for item in items_of(cfg):
+    for item in items_of(cfg, markets):
         mkt = item["market"]
         try:
             sig, df, _ = analyze(item, cfg, offline)
@@ -209,7 +225,8 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False):
                     print(f"[{sym}] compra no ejecutada: {e}")
                     continue
                 try:
-                    detail = dumps(explain_entry(sig, prepare(df, cfg["strategy"]).iloc[-1], df, cfg))
+                    st = strategy_for(cfg, mkt)
+                    detail = dumps(explain_entry(sig, prepare(df, st).iloc[-1], df, {"strategy": st}))
                 except Exception as e:
                     detail = ""; print(f"[{sym}] sin detalle: {e}")
                 j.log(kind="trade", mode=mode, symbol=sym, market=mkt, side="buy", qty=qty, price=fill,
@@ -226,7 +243,7 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False):
         notify(f"📊 <b>Resumen {datetime.now():%d/%m %H:%M}</b>\n"
                + "\n".join(ranking_lines([r[1] for r in results]) + extra) + "\n⚠️ No es consejo financiero. DYOR.")
 
-    if results:
+    if results and any(r[0]["market"] == "byma" for r in results):
         arb_alerts(cfg, px_cache, offline)
     if mode == "paper" and brokers and results:
         refresh_panel(cfg, brokers["crypto"], j, results, px_cache, last_px, offline, record=True)
@@ -234,11 +251,22 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False):
 
 
 def refresh_panel(cfg, paper, j, results, px_cache, last_px, offline=False, record=False):
+    """Combina lo analizado ahora con lo último conocido de los otros mercados y regenera el panel."""
+    from datetime import date
+    from .panel import load_cache, save_cache, sig_row
     try:
+        cache = load_cache(cfg["state_dir"])
+        for sym, (p, d) in px_cache.items():
+            cache["px"][sym] = [p, str(d)]
+        for item, sig, df in results:
+            cache["sig"][sig.symbol] = sig_row(item, sig, df, strategy_for(cfg, item["market"]))
+        save_cache(cfg["state_dir"], cache)
+        all_px = {k: (v[0], date.fromisoformat(v[1])) for k, v in cache["px"].items()}
+        all_last = {k: v[0] for k, v in cache["px"].items()}
         if record:
-            _, ccl = implied_ccl(cfg, px_cache, offline)
-            record_equity(cfg["state_dir"], paper, last_px, ccl)
-        write_panel(cfg, paper, j, results, px_cache, last_px, offline)
+            _, ccl = implied_ccl(cfg, dict(all_px), offline)
+            record_equity(cfg["state_dir"], paper, all_last, ccl)
+        write_panel(cfg, paper, j, results, dict(all_px), all_last, offline, sig_rows=list(cache["sig"].values()))
     except Exception as e:
         print(f"[panel] no se pudo generar: {e}")
 
@@ -287,9 +315,9 @@ def paper_lines(paper, last_px, j):
     return out
 
 
-def scan_all(cfg, offline=False):
+def scan_all(cfg, offline=False, markets=None):
     results, px_cache, last_px = [], {}, {}
-    for item in items_of(cfg):
+    for item in items_of(cfg, markets):
         try:
             sig, df, _ = analyze(item, cfg, offline)
         except Exception as e:
@@ -377,7 +405,7 @@ def quote_text(sym, mkt, cfg, offline=False):
     cur = {"crypto": "USDT", "us": "USD", "byma": "ARS"}[mkt]
     trend = {1: "alcista", -1: "bajista", 0: "lateral"}
     from .strategy import prepare, trend_of
-    d = prepare(df, cfg["strategy"])
+    d = prepare(df, strategy_for(cfg, mkt))
     last = d.iloc[-1]
     win = df.tail(50)
     lines = [f"💹 <b>{sig.symbol}</b> ({ {'crypto': 'Cripto', 'us': 'EE.UU.', 'byma': 'BYMA'}[mkt] }): {sig.price:,.2f} {cur}",
@@ -553,6 +581,7 @@ def main():
     r.add_argument("--resumen", action="store_true", help="un solo mensaje con toda la watchlist en cada ciclo")
     r.add_argument("--solo-operaciones", action="store_true", help="solo avisa compras y ventas, sin señales ni resumen")
     r.add_argument("--confirmar", action="store_true", help="al terminar, avisa cuántas operaciones hizo")
+    r.add_argument("--mercados", default="", help="limita el ciclo, ej: crypto o us,byma")
     sub.add_parser("resumen-dia", help="resumen de cierre del día (no opera)")
     q = sub.add_parser("cotizacion", help="cotización y lectura técnica de un activo")
     q.add_argument("simbolo", nargs="?", default="")
@@ -591,7 +620,8 @@ def main():
         mode = a.mode or cfg["mode"]
         while True:
             try:
-                ops, n = cycle(cfg, mode, a.offline, a.confirm_live, a.resumen, a.solo_operaciones)
+                mk = {m.strip() for m in a.mercados.split(",") if m.strip()} or None
+                ops, n = cycle(cfg, mode, a.offline, a.confirm_live, a.resumen, a.solo_operaciones, mk)
                 if a.confirmar:
                     notify(f"✅ Ciclo ejecutado: {n} activos analizados, {ops['buy']} compras y {ops['sell']} ventas."
                            + ("" if ops["buy"] or ops["sell"] else " Sin señales nuevas para operar."))

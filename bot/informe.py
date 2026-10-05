@@ -160,7 +160,8 @@ def build_report(cfg, paper, journal, analyze_fn, items, days=7, offline=False, 
         except Exception as e:
             failed.append(it["symbol"]); print(f"[informe] {it['symbol']}: {e}")
             continue
-        d = prepare(df, cfg["strategy"]).iloc[-1]
+        st_m = dict(cfg["strategy"]); st_m.update((cfg.get("strategy_overrides") or {}).get(it["market"]) or {})
+        d = prepare(df, st_m).iloc[-1]
         last_px[sig.symbol] = float(df["close"].iloc[-1])
         sigs.append((it["market"], sig, d, _ret_since(df, 30)))
 

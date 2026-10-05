@@ -32,6 +32,33 @@ def record_equity(state_dir, paper, last_px, ccl):
     return eq, total
 
 
+def load_cache(state_dir):
+    path = os.path.join(state_dir, "market_cache.json")
+    try:
+        with open(path) as f:
+            c = json.load(f)
+        return {"px": c.get("px", {}), "sig": c.get("sig", {})}
+    except Exception:
+        return {"px": {}, "sig": {}}
+
+
+def save_cache(state_dir, cache):
+    with open(os.path.join(state_dir, "market_cache.json"), "w") as f:
+        json.dump(cache, f, ensure_ascii=False)
+
+
+def sig_row(item, s, df, strat):
+    trend = {1: "alcista", -1: "bajista", 0: "lateral"}
+    try:
+        d = prepare(df, strat).iloc[-1]
+        tr, mac = trend[trend_of(d)], "↑" if d["macd_hist"] > 0 else "↓"
+    except Exception:
+        tr, mac = "—", "—"
+    return {"sym": s.symbol, "mkt": MKT[item["market"]], "action": s.action, "score": s.score, "price": s.price,
+            "rsi": s.rsi, "trend": tr, "macd": mac, "reasons": s.reasons,
+            "tf": item.get("timeframe", ""), "at": datetime.now().strftime("%d/%m %H:%M")}
+
+
 def _detail(s):
     try:
         return json.loads(s) if s else None
@@ -39,7 +66,7 @@ def _detail(s):
         return None
 
 
-def write_panel(cfg, paper, journal, results, px_cache, last_px, offline=False):
+def write_panel(cfg, paper, journal, results, px_cache, last_px, offline=False, sig_rows=None):
     """results: lista de (item, sig, df). Escribe state/panel.html."""
     now = datetime.now()
     ccl_rows, ccl = implied_ccl(cfg, px_cache, offline)
@@ -99,18 +126,9 @@ def write_panel(cfg, paper, journal, results, px_cache, last_px, offline=False):
         with open(path) as f:
             curve = [{"t": r["time"], "v": float(r["total_usd"])} for r in csv.DictReader(f) if r["total_usd"]]
 
-    # señales
-    trend = {1: "alcista", -1: "bajista", 0: "lateral"}
-    sigs = []
-    for item, s, df in results:
-        try:
-            d = prepare(df, cfg["strategy"]).iloc[-1]
-            tr, mac = trend[trend_of(d)], "↑" if d["macd_hist"] > 0 else "↓"
-        except Exception:
-            tr, mac = "—", "—"
-        sigs.append({"sym": s.symbol, "mkt": MKT[item["market"]], "action": s.action, "score": s.score,
-                     "price": s.price, "rsi": s.rsi, "trend": tr, "macd": mac, "reasons": s.reasons})
-    sigs.sort(key=lambda x: -x["score"])
+    # señales (las últimas conocidas de cada activo)
+    sigs = sig_rows if sig_rows is not None else [sig_row(i, s, df, cfg["strategy"]) for i, s, df in results]
+    sigs = sorted(sigs, key=lambda x: -x["score"])
 
     data = {
         "updated": now.strftime("%d/%m/%Y %H:%M"),
@@ -208,7 +226,7 @@ section{display:none} section.on{display:block}
 
 <section id="t-sig"><div class="card"><h2>Ranking de señales</h2>
   <div class="seg" id="sigf"><button data-f="all" aria-pressed="true">Todos</button><button data-f="Cripto" aria-pressed="false">Cripto</button><button data-f="EE.UU." aria-pressed="false">EE.UU.</button><button data-f="BYMA" aria-pressed="false">BYMA</button></div>
-  <div class="tbl"><table><thead><tr><th>Activo</th><th>Señal</th><th>Score</th><th>Precio</th><th>RSI</th><th>MACD</th><th>Tendencia</th></tr></thead><tbody id="sigtb"></tbody></table></div></div></section>
+  <div class="tbl"><table><thead><tr><th>Activo</th><th>Señal</th><th>Score</th><th>Precio</th><th>RSI</th><th>MACD</th><th>Tendencia</th><th>Velas · dato</th></tr></thead><tbody id="sigtb"></tbody></table></div></div></section>
 
 <section id="t-ccl">
   <div class="card"><h2>Dólar CCL implícito</h2><div class="grid" id="cclg"></div></div>
@@ -299,7 +317,7 @@ $('#opslist').innerHTML = D.ops.length ? D.ops.map(o => `<li><div class="row"><s
 // ---- señales
 const drawSig = f => { $('#sigtb').innerHTML = D.signals.filter(s => f === 'all' || s.mkt === f).map(s =>
   `<tr><td><b>${esc(s.sym)}</b></td><td><span class="tag ${s.action}">${s.action}</span></td><td class="${cls(s.score)}">${s.score > 0 ? '+' : ''}${nf(s.score)}</td>
-   <td>${px(s.price)}</td><td>${nf(s.rsi, 0)}</td><td>${s.macd}</td><td>${s.trend}</td></tr>`).join(''); };
+   <td>${px(s.price)}</td><td>${nf(s.rsi, 0)}</td><td>${s.macd}</td><td>${s.trend}</td><td>${esc(s.tf || '')} · ${esc(s.at || '')}</td></tr>`).join(''); };
 document.querySelectorAll('#sigf button').forEach(b => b.onclick = () => {
   document.querySelectorAll('#sigf button').forEach(x => x.setAttribute('aria-pressed', x === b)); drawSig(b.dataset.f); });
 drawSig('all');
