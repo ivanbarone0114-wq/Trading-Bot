@@ -3,7 +3,7 @@ name: Bot de trading (paper)
 # Horarios en UTC (Argentina = UTC-3).
 on:
   schedule:
-    # Operaciones cada 25 min, lunes a viernes, de 10:30 a 18:00 (hora argentina).
+    # Acciones (EE.UU., BYMA y CEDEARs): cada 25 min, lunes a viernes, de 10:30 a 18:00 (hora argentina).
     - cron: "30 13,18 * * 1-5"
     - cron: "55 13,18 * * 1-5"
     - cron: "20 14,19 * * 1-5"
@@ -16,6 +16,9 @@ on:
     - cron: "15 17 * * 1-5"
     - cron: "40 17 * * 1-5"
     - cron: "5 18 * * 1-5"
+    # Cripto 24/7: cada 15 minutos, todos los días (solo BTC, ETH y demás cripto).
+    # Si el repositorio es PRIVADO, esto supera los minutos gratis: cambiá esta línea por "2 */2 * * *" (cada 2 horas).
+    - cron: "2,17,32,47 * * * *"
     # Resumen del día: 22:00 hora argentina, de lunes a viernes.
     - cron: "0 1 * * 2-6"
     # Reporte semanal + informe de análisis: domingos 20:00 hora argentina.
@@ -25,7 +28,7 @@ on:
       comando:
         description: "Qué ejecutar"
         type: choice
-        options: [ciclo, resumen, reporte, informe, panel, ccl, cotizacion, cartera]
+        options: [ciclo, cripto, resumen, reporte, informe, panel, ccl, cotizacion, cartera]
         default: ciclo
       simbolo:
         description: "Símbolo para cotizacion (ej: GGAL.BA, NVDA, BTC) o días para informe (ej: 30)"
@@ -77,7 +80,8 @@ jobs:
             case "$CRON" in
               "0 1 * * 2-6") CMD=resumen ;;
               "0 23 * * 0")  CMD=reporte ;;
-              *)             CMD=ciclo ;;
+              "2,17,32,47 * * * *"|"2 */2 * * *"|"2 * * * *") CMD=cripto ;;
+              *)             CMD=acciones ;;
             esac
           fi
           echo "Comando: $CMD | Canales: $NOTIFY_CHANNELS"
@@ -91,12 +95,14 @@ jobs:
             cotizacion) python -m bot.main cotizacion "$SIMBOLO" ;;
             cartera)    python -m bot.main cartera ;;
             panel)      python -m bot.main panel ;;
-            *)
+            cripto)
               if [ "$EVENTO" = "schedule" ]; then
-                python -m bot.main run --mode paper --solo-operaciones
+                python -m bot.main run --mode paper --solo-operaciones --mercados crypto
               else
-                python -m bot.main run --mode paper --solo-operaciones --confirmar
+                python -m bot.main run --mode paper --solo-operaciones --mercados crypto --confirmar
               fi ;;
+            acciones)   python -m bot.main run --mode paper --solo-operaciones --mercados us,byma ;;
+            *)          python -m bot.main run --mode paper --solo-operaciones --confirmar ;;
           esac
 
       - name: Guardar cartera y bitácora
