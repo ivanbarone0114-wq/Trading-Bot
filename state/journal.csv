@@ -143,3 +143,7 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-07T00:22:37+00:00,alert,paper,XRP/USDT,crypto,SELL,,1.49691,,,,score -0.446,
 2026-10-07T00:22:37+00:00,trade,paper,SOL/USDT,crypto,sell,0.2808756712102437,120.51901215148182,,,-0.23400942678865988,stop,"{""resumen"":""Venta por stop con resultado -0.4%."",""pro"":[""Se respetó el stop: la pérdida quedó acotada en -0.4%""],""contra"":[],""ret"":-0.0044,""score"":-0.422}"
 2026-10-07T00:22:43+00:00,trade,paper,XRP/USDT,crypto,sell,22.58610954263128,1.4999203774424001,,,-0.2075284158112254,stop,"{""resumen"":""Venta por stop con resultado -0.4%."",""pro"":[""Se respetó el stop: la pérdida quedó acotada en -0.4%""],""contra"":[],""ret"":-0.0036,""score"":-0.446}"
+2026-10-07T13:31:25+00:00,alert,paper,BTC/USDT,crypto,SELL,,83422.02,,,,score -0.31,
+2026-10-07T13:31:30+00:00,alert,paper,ETH/USDT,crypto,SELL,,2567.28,,,,score -0.428,
+2026-10-07T13:31:35+00:00,alert,paper,SOL/USDT,crypto,SELL,,116.43,,,,score -0.422,
+2026-10-07T13:31:40+00:00,alert,paper,XRP/USDT,crypto,SELL,,1.4404,,,,score -0.44,
