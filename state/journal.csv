@@ -129,3 +129,13 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-06T19:08:59+00:00,alert,paper,BA,us,SELL,,189.82899475097656,,,,score -0.5,
 2026-10-06T20:59:00+00:00,alert,paper,SOL/USDT,crypto,BUY,,121.05,120.579301802383,121.75604729642548,,score 0.578,
 2026-10-06T20:59:05+00:00,trade,paper,SOL/USDT,crypto,buy,0.2808756712102437,121.110525,120.579301802383,121.75604729642548,,score 0.578,"{""resumen"":""Compra con score +0.58: 4 argumentos a favor y 0 en contra. Riesgo definido con stop en 120.58 y objetivo en 121.76."",""pro"":[""Tendencia alcista (precio y EMA rápida sobre EMA lenta) (+0.32 al score)"",""Cruce alcista de MACD reciente (+0.24 al score)"",""Noticias: sentimiento +0.15 (+0.02 al score)"",""La temporalidad mayor también es alcista""],""contra"":[],""score"":0.578,""rsi"":55.9,""comp"":{""trend"":0.32,""rsi"":0.0,""macd"":0.24,""patterns"":0.0,""news"":0.018}}"
+2026-10-07T00:03:42+00:00,alert,paper,SPY,us,BUY,,774.8300170898438,761.3096585120884,801.8707342453545,,score 0.632,
+2026-10-07T00:03:43+00:00,alert,paper,NVDA,us,BUY,,238.89999389648438,227.0599276329761,262.58012642350093,,score 0.488,
+2026-10-07T00:03:47+00:00,alert,paper,GGAL,us,SELL,,38.25,,,,score -0.44,
+2026-10-07T00:03:48+00:00,alert,paper,MSFT,us,BUY,,525.1799926757812,501.5533818469015,572.4332143335407,,score 0.636,
+2026-10-07T00:03:52+00:00,alert,paper,NFLX,us,SELL,,67.5,,,,score -0.5,
+2026-10-07T00:03:58+00:00,alert,paper,BA,us,SELL,,192.72000122070312,,,,score -0.5,
+2026-10-07T00:03:58+00:00,alert,paper,GLOB,us,SELL,,35.75,,,,score -0.5,
+2026-10-07T00:03:58+00:00,alert,paper,BMA,us,SELL,,68.77999877929688,,,,score -0.5,
+2026-10-07T00:03:59+00:00,alert,paper,CEPU,us,SELL,,12.430000305175781,,,,score -0.5,
+2026-10-07T00:04:00+00:00,alert,paper,TGS,us,SELL,,26.579999923706055,,,,score -0.5,
