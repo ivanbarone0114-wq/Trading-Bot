@@ -190,3 +190,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-08T00:38:11+00:00,alert,paper,CEPU,us,SELL,,12.720000267028809,,,,score -0.5,
 2026-10-08T00:38:11+00:00,alert,paper,TGS,us,SELL,,27.040000915527344,,,,score -0.5,
 2026-10-08T00:38:12+00:00,alert,paper,SUPV,us,SELL,,7.440000057220459,,,,score -0.682,
+2026-10-08T02:56:54+00:00,alert,paper,BTC/USDT,crypto,SELL,,83178.3,,,,score -0.458,
