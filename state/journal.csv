@@ -225,3 +225,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-08T19:22:54+00:00,alert,paper,SPY.BA,byma,BUY,,20760.0,20327.477314535725,21625.04537092855,,score 0.5,
 2026-10-08T19:22:55+00:00,alert,paper,QQQ.BA,byma,BUY,,60200.0,58520.31165331156,63559.376693376886,,score 0.5,
 2026-10-08T19:32:23+00:00,alert,paper,BYMA.BA,byma,SELL,,253.5,,,,score -0.409,
+2026-10-08T19:59:45+00:00,alert,paper,META,us,BUY,,720.5700073242188,674.8271220613099,812.0557778500364,,score 0.409,
