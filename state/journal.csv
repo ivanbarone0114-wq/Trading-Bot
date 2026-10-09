@@ -240,3 +240,5 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-09T00:56:50+00:00,alert,paper,CEPU,us,SELL,,12.539999961853027,,,,score -0.5,
 2026-10-09T00:56:51+00:00,alert,paper,TGS,us,SELL,,26.239999771118164,,,,score -0.5,
 2026-10-09T00:56:52+00:00,alert,paper,SUPV,us,SELL,,7.139999866485596,,,,score -0.5,
+2026-10-09T02:08:48+00:00,alert,paper,XRP/USDT,crypto,BUY,,1.39213,1.384482952824881,1.4036005707626786,,score 0.44,
+2026-10-09T02:08:48+00:00,trade,paper,XRP/USDT,crypto,buy,24.423006472096713,1.392826065,1.384482952824881,1.4036005707626786,,score 0.44,"{""resumen"":""Compra con score +0.44: 2 argumentos a favor y 0 en contra. Riesgo definido con stop en 1.38 y objetivo en 1.40."",""pro"":[""Tendencia alcista (precio y EMA rápida sobre EMA lenta) (+0.32 al score)"",""Histograma MACD positivo (+0.12 al score)""],""contra"":[],""score"":0.44,""rsi"":60.5,""comp"":{""trend"":0.32,""rsi"":0.0,""macd"":0.12,""patterns"":0.0,""news"":0.0}}"
