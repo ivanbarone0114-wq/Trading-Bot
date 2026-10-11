@@ -149,7 +149,42 @@ def ranking_lines(sigs, full_limit=14, top=5):
     return out
 
 
+def market_open(market, now=None):
+    """Cripto siempre. BYMA: lun-vie 11 a 17 (Buenos Aires). EE.UU.: lun-vie 9:30 a 16 (Nueva York).
+    No contempla feriados: en un feriado no hay velas nuevas y el bot simplemente no encuentra señales nuevas."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    if market == "crypto":
+        return True
+    tz = ZoneInfo("America/Argentina/Buenos_Aires" if market == "byma" else "America/New_York")
+    t = (now or datetime.now(ZoneInfo("UTC"))).astimezone(tz)
+    if t.weekday() >= 5:
+        return False
+    m = t.hour * 60 + t.minute
+    return (660 <= m < 1020) if market == "byma" else (570 <= m < 960)
+
+
+def bars_since(df, pos):
+    """Velas desde el último control de la posición (para no perder un stop u objetivo entre ciclos)."""
+    import pandas as pd
+    ck = pos.get("checked")
+    if ck:
+        try:
+            t = pd.Timestamp(ck)
+            if df.index.tz is None:
+                t = t.tz_convert(None)
+            sub = df[df.index >= t - pd.Timedelta(minutes=1)]
+            if len(sub):
+                return sub
+        except Exception:
+            pass
+    return df.tail(1)
+
+
 def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False, markets=None):
+    if markets and "auto" in markets:
+        markets = {m for m in ("crypto", "us", "byma") if market_open(m)}
+        print(f"[auto] mercados abiertos: {', '.join(sorted(markets))}")
     j = Journal(cfg["state_dir"])
     risk = RiskManager(cfg["risk"], cfg["capital"], cfg["state_dir"])
     brokers = get_brokers(cfg, mode, confirm_live) if mode in ("paper", "live") else None
@@ -183,12 +218,22 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False, ma
             if not (pos and pos["qty"] > 0):
                 continue
             why = None
-            if pos.get("stop") and last["low"] <= pos["stop"]:
-                why, px = "stop", pos["stop"]
-            elif pos.get("target") and last["high"] >= pos["target"]:
-                why, px = "objetivo", pos["target"]
-            elif sig.action == "SELL":
+            min_val = float((cfg.get("min_order") or {}).get(mkt, 0))
+            if min_val and pos["qty"] * float(pos.get("avg") or last["close"]) < 0.2 * min_val:
+                why, px = "residuo", float(last["close"])
+            else:
+                for _, bar in bars_since(df, pos).iterrows():
+                    if pos.get("stop") and bar["low"] <= pos["stop"]:
+                        why, px = "stop", min(float(bar["open"]), pos["stop"])
+                        break
+                    if pos.get("target") and bar["high"] >= pos["target"]:
+                        why, px = "objetivo", max(float(bar["open"]), pos["target"])
+                        break
+            if not why and sig.action == "SELL" and market_open(mkt):
                 why, px = "señal", sig.price
+            if not why and hasattr(b, "s"):
+                b.s["positions"][sym]["checked"] = str(df.index[-1])
+                b._save()
             if why and confirm(f"[{mode}] VENDER {pos['qty']:.6f} {sym} @ {px:,.4f} ({why}).", cfg, mode):
                 sold_qty = float(pos["qty"])  # se guarda antes: la venta modifica la posición
                 ops["sell"] += 1
@@ -206,17 +251,25 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False, ma
         for item, sig, df in buys:
             mkt, sym = item["market"], sig.symbol
             b = brokers[mkt]
+            if not market_open(mkt):
+                print(f"[{sym}] mercado cerrado: no se abren posiciones fuera de horario")
+                continue
             if b.position(sym):
                 continue
             ok, reason = risk.can_open(mkt, b.open_count(mkt), j.realized_today(mkt))
             if not ok:
                 print(f"[{sym}] compra bloqueada: {reason}")
                 continue
+            base = sym[:-3] if sym.endswith(".BA") else sym
+            if any(o != sym and (o[:-3] if o.endswith(".BA") else o) == base for o in held_symbols(brokers)):
+                print(f"[{sym}] ya hay posición en el mismo activo por otro mercado; no se duplica")
+                continue
             qty = risk.size(mkt, sig.price, sig.stop, b.cash(mkt))
             if mkt == "byma":
                 qty = float(int(qty))  # en BYMA se compran acciones enteras
-            if qty <= 0:
-                print(f"[{sym}] sin efectivo suficiente para comprar")
+            min_val = float((cfg.get("min_order") or {}).get(mkt, 0))
+            if qty <= 0 or qty * sig.price < min_val:
+                print(f"[{sym}] monto de compra menor al mínimo ({qty * sig.price:,.2f} < {min_val:,.2f})")
                 continue
             if confirm(f"[{mode}] COMPRAR {qty:.6f} {sym} @ ~{sig.price:,.4f} (stop {sig.stop:,.4f}).", cfg, mode):
                 try:
@@ -248,6 +301,16 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False, ma
     if mode == "paper" and brokers and results:
         refresh_panel(cfg, brokers["crypto"], j, results, px_cache, last_px, offline, record=True)
     return ops, len(results)
+
+
+def held_symbols(brokers):
+    syms = set()
+    for b in {id(b): b for b in brokers.values()}.values():
+        try:
+            syms |= set(b.s["positions"].keys())
+        except Exception:
+            pass
+    return syms
 
 
 def refresh_panel(cfg, paper, j, results, px_cache, last_px, offline=False, record=False):
