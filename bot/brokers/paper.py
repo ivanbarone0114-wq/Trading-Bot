@@ -15,13 +15,15 @@ class PaperBroker:
         else:
             self.s = {"cash": dict(capital), "positions": {}}
             self._save()
+        for m, v in (capital or {}).items():  # mercados nuevos arrancan con su capital
+            self.s["cash"].setdefault(m, float(v))
 
     def _save(self):
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
         with open(self.path, "w") as f:
             json.dump(self.s, f, indent=2)
 
-    def cash(self, market): return self.s["cash"][market]
+    def cash(self, market): return self.s["cash"].get(market, 0.0)
     def position(self, symbol): return self.s["positions"].get(symbol)
 
     def open_count(self, market=None):
@@ -31,7 +33,7 @@ class PaperBroker:
         fill = price * (1 + self.slip)
         fee = self.fees.get(market, self.fee)
         cost = fill * qty * (1 + fee)
-        if cost > self.s["cash"][market] + 1e-9:
+        if cost > self.s["cash"].get(market, 0.0) + 1e-9:
             raise ValueError("Saldo simulado insuficiente")
         self.s["cash"][market] -= cost
         p = self.s["positions"].get(symbol)
@@ -41,7 +43,8 @@ class PaperBroker:
         else:
             from datetime import datetime, timezone
             self.s["positions"][symbol] = {"market": market, "qty": qty, "avg": fill, "stop": stop, "target": target,
-                                           "checked": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+                                           "checked": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                                           "opened": datetime.now(timezone.utc).isoformat(timespec="seconds")}
         if stop is not None:
             self.s["positions"][symbol].update(stop=stop, target=target)
         self._save()
