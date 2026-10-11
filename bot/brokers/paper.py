@@ -39,7 +39,9 @@ class PaperBroker:
             p["avg"] = (p["avg"] * p["qty"] + fill * qty) / (p["qty"] + qty)
             p["qty"] += qty
         else:
-            self.s["positions"][symbol] = {"market": market, "qty": qty, "avg": fill, "stop": stop, "target": target}
+            from datetime import datetime, timezone
+            self.s["positions"][symbol] = {"market": market, "qty": qty, "avg": fill, "stop": stop, "target": target,
+                                           "checked": datetime.now(timezone.utc).isoformat(timespec="seconds")}
         if stop is not None:
             self.s["positions"][symbol].update(stop=stop, target=target)
         self._save()
