@@ -3,16 +3,22 @@ mode: paper              # alerts | paper | live
 state_dir: state         # cartera simulada, bitácora y alertas
 
 capital:                 # capital asignado por mercado (en la moneda de cada mercado)
+  crypto_d: 100        # USDT, estrategia cripto diaria
+  crypto_t: 100        # USDT, estrategia cripto de tendencia
   crypto: 100           # USDT
   us: 100               # USD
   byma: 150000          # ~100 USD al CCL
 
 watchlist:
-  # --- Cripto (24 h, velas de 15 min) ---
+  # --- Cripto (24 h): cada una se opera con las estrategias "tendencia" y "diario" ---
   - {symbol: BTC/USDT, market: crypto, timeframe: 1h, htf: 4h, keywords: [bitcoin, btc]}
   - {symbol: ETH/USDT, market: crypto, timeframe: 1h, htf: 4h, keywords: [ethereum]}
   - {symbol: SOL/USDT, market: crypto, timeframe: 1h, htf: 4h, keywords: [solana]}
   - {symbol: XRP/USDT, market: crypto, timeframe: 1h, htf: 4h, keywords: [xrp, ripple]}
+  - {symbol: ADA/USDT, market: crypto, timeframe: 1h, htf: 4h, keywords: [cardano]}
+  - {symbol: DOGE/USDT, market: crypto, timeframe: 1h, htf: 4h, keywords: [dogecoin]}
+  - {symbol: LINK/USDT, market: crypto, timeframe: 1h, htf: 4h, keywords: [chainlink]}
+  - {symbol: AVAX/USDT, market: crypto, timeframe: 1h, htf: 4h, keywords: [avalanche]}
 
   # --- BYMA (acciones locales, en ARS) ---
   - {symbol: GGAL,  market: byma, timeframe: 1d, htf: 1wk, keywords: [galicia, merval]}
@@ -60,6 +66,10 @@ risk:
 
 news:
   enabled: true
+  move_alert_pct: 0.05    # aviso inmediato si una acción se mueve más de 5% en el día
+  movers_top: 5           # cuántas subas y bajas mostrar
+  digest_midday: "13:00"  # resumen de subas y bajas a media rueda (hora argentina)
+  digest_close: "18:15"   # resumen al cierre
   max_items: 20
 
 live:
@@ -106,11 +116,28 @@ strategy_overrides:
 
 fees:
   crypto: 0.001
+  crypto_d: 0.001
+  crypto_t: 0.001
   us: 0.006
   byma: 0.006
 
 # Monto mínimo por compra (evita posiciones "polvo" que ocupan cupos)
 min_order:
   crypto: 10
+  crypto_d: 10
+  crypto_t: 10
   us: 10
   byma: 10000
+
+# ============ CRIPTO: DOS ESTRATEGIAS EN PARALELO ============
+# Cada cripto de la watchlist se analiza con las dos, cada una con su capital (capital.crypto_d / crypto_t).
+crypto_strategies:
+  tendencia:          # velas diarias; compra con precio y EMA20 sobre EMA50; vende cuando se pierde
+    enabled: true
+    ema_fast: 20
+    ema_slow: 50
+    stop_atr: 3.0     # stop de emergencia, en ATR diarios
+  diario:             # velas de 1 h; giro de MACD con tendencia diaria y de 4 h alcistas
+    enabled: true
+    reward_risk: 2.0  # objetivo = 2 veces la distancia al stop
+    max_hold_h: 24    # cierre forzado a las 24 h
