@@ -15,7 +15,7 @@ on:
       comando:
         description: "Qué ejecutar"
         type: choice
-        options: [auto, ciclo, cripto, resumen, reporte, informe, panel, ccl, cotizacion, cartera]
+        options: [auto, ciclo, cripto, resumen, reporte, informe, panel, noticias, ccl, cotizacion, cartera]
         default: ciclo
       simbolo:
         description: "Símbolo para cotizacion (ej: GGAL.BA, NVDA, BTC) o días para informe (ej: 30)"
@@ -31,7 +31,7 @@ permissions:
 
 # Lo que modifica archivos (ciclos, resumen, informe, panel) va en fila; las consultas corren aparte y no esperan.
 concurrency:
-  group: ${{ (github.event_name == 'workflow_dispatch' && contains(fromJSON('["cotizacion","cartera","ccl"]'), inputs.comando)) && format('consulta-{0}', github.run_id) || 'trading-bot' }}
+  group: ${{ (github.event_name == 'workflow_dispatch' && contains(fromJSON('["cotizacion","cartera","ccl","noticias"]'), inputs.comando)) && format('consulta-{0}', github.run_id) || 'trading-bot' }}
   cancel-in-progress: false
 
 jobs:
@@ -82,6 +82,7 @@ jobs:
             cotizacion) python -m bot.main cotizacion "$SIMBOLO" ;;
             cartera)    python -m bot.main cartera ;;
             panel)      python -m bot.main panel ;;
+            noticias)   python -m bot.main noticias ;;
             cripto)
               if [ "$EVENTO" = "schedule" ]; then
                 python -m bot.main run --mode paper --solo-operaciones --mercados crypto
@@ -94,7 +95,7 @@ jobs:
           esac
 
       - name: Guardar cartera y bitácora
-        if: ${{ github.event_name == 'schedule' || !contains(fromJSON('["cotizacion","cartera","ccl"]'), inputs.comando) }}
+        if: ${{ github.event_name == 'schedule' || !contains(fromJSON('["cotizacion","cartera","ccl","noticias"]'), inputs.comando) }}
         run: |
           git config user.name "trading-bot"
           git config user.email "trading-bot@users.noreply.github.com"
