@@ -8,8 +8,7 @@ import pandas as pd
 from .data import fetch_ohlcv
 from .strategy import prepare, trend_of
 
-CUR = {"crypto": "USDT", "us": "USD", "byma": "ARS"}
-MKT = {"crypto": "Cripto", "us": "EE.UU.", "byma": "BYMA"}
+from .markets import MKT, CUR, ACTIVE
 
 
 # ---------- utilidades ----------
@@ -110,10 +109,10 @@ def save_equity_snapshot(state_dir, eq, ccl=None):
     if os.path.exists(path):
         with open(path) as f:
             rows = [r for r in csv.DictReader(f) if r["date"] != today]
-    rows.append({"date": today, "crypto": round(eq.get("crypto", 0), 4), "us": round(eq.get("us", 0), 4),
-                 "byma": round(eq.get("byma", 0), 2), "ccl": round(ccl, 2) if ccl else ""})
+    row = {"date": today, **{m: round(eq.get(m, 0), 4) for m in ACTIVE}, "ccl": round(ccl, 2) if ccl else ""}
+    rows.append(row)
     with open(path, "w", newline="") as f:
-        w = csv.DictWriter(f, ["date", "crypto", "us", "byma", "ccl"])
+        w = csv.DictWriter(f, ["date", "crypto", *ACTIVE, "ccl"], extrasaction="ignore", restval="")
         w.writeheader(); w.writerows(rows)
 
 
@@ -130,7 +129,7 @@ PROMPT = """## Prompt para el chat de análisis
 
 Copiá desde acá hasta el final y pegalo junto con este informe:
 
-> Actuá como analista cuantitativo de mercados y gestor de riesgo. Te paso el informe de un bot de **paper trading** (dinero simulado) que opera cripto, acciones de EE.UU. y BYMA con una estrategia de confluencia técnica: tendencia (EMA rápida/lenta), MACD, RSI, patrones de velas y noticias, con filtro de temporalidad mayor, stop por ATR y objetivo por relación riesgo/beneficio. Los parámetros están en la sección "Configuración".
+> Actuá como analista cuantitativo de mercados y gestor de riesgo. Te paso el informe de un bot de **paper trading** (dinero simulado) que opera acciones de EE.UU. y BYMA con una estrategia de confluencia técnica, y cripto con DOS estrategias en paralelo y capital separado: "Cripto tendencia" (velas diarias, compra con precio y EMA20 sobre EMA50, sostiene semanas) y "Cripto diario" (velas de 1 h, giro de MACD con tendencia diaria y de 4 h a favor, objetivo 2R y cierre a las 24 h). Compará explícitamente las dos estrategias de cripto: tendencia (EMA rápida/lenta), MACD, RSI, patrones de velas y noticias, con filtro de temporalidad mayor, stop por ATR y objetivo por relación riesgo/beneficio. Los parámetros están en la sección "Configuración".
 >
 > Con esos datos:
 > 1. **Diagnóstico de rendimiento:** evaluá el resultado total y por mercado contra las referencias del período (SPY, Merval, BTC). Para BYMA, tené en cuenta que los montos están en pesos: si hay datos de CCL en el historial, estimá el rendimiento en dólares.
@@ -176,7 +175,7 @@ def build_report(cfg, paper, journal, analyze_fn, items, days=7, offline=False, 
     # 1. Resumen
     md += ["## 1. Resumen de rendimiento", ""]
     rows = []
-    for m in ("crypto", "us", "byma"):
+    for m in ACTIVE:
         unreal = sum((last_px.get(s, p["avg"]) - p["avg"]) * p["qty"] for s, p in paper.s["positions"].items() if p["market"] == m)
         real = sum(c["pnl"] for c in closed_all if c["market"] == m)
         rows.append([MKT[m], CUR[m], _f(cap[m]), _f(eq.get(m, 0)), _p(eq.get(m, 0) / cap[m] - 1 if cap[m] else None),
@@ -233,8 +232,9 @@ def build_report(cfg, paper, journal, analyze_fn, items, days=7, offline=False, 
     # 5. Historial de patrimonio
     hist = load_equity(cfg["state_dir"])
     md += ["## 5. Evolución del patrimonio (cierre diario)", ""]
-    md.append(_table(["Fecha", "Cripto (USDT)", "EE.UU. (USD)", "BYMA (ARS)", "CCL"],
-                     [[r["date"], r["crypto"], r["us"], r["byma"], r["ccl"] or "—"] for r in hist[-60:]]))
+    md.append(_table(["Fecha", "Cripto diario (USDT)", "Cripto tendencia (USDT)", "EE.UU. (USD)", "BYMA (ARS)", "CCL"],
+                     [[r["date"], r.get("crypto_d") or r.get("crypto") or "—", r.get("crypto_t") or "—", r.get("us", ""), r.get("byma", ""),
+                       r.get("ccl") or "—"] for r in hist[-60:]]))
 
     # 6. Señales
     md += ["## 6. Señales actuales de todos los activos", ""]

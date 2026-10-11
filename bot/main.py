@@ -28,6 +28,9 @@ from .explain import explain_entry, explain_exit, dumps
 from .panel import record_equity, write_panel
 from .strategy import prepare
 from .informe import build_report, equity_by_market, save_equity_snapshot
+from .markets import MKT, CUR, ACTIVE, CRYPTO_STRATS, is_crypto, base_market, label_for, base_symbol
+from .crypto_strats import trend_signal, day_signal
+from . import movers
 
 
 def _numbers(d):
@@ -62,12 +65,21 @@ def strategy_for(cfg, market):
 
 
 def analyze(item, cfg, offline):
+    mkt = item["market"]
+    if mkt in CRYPTO_STRATS:
+        cs = cfg.get("crypto_strategies") or {}
+        label = label_for(item["symbol"], mkt)
+        d1 = fetch_ohlcv(item["symbol"], mkt, "1d", 120, offline)
+        if mkt == "crypto_t":
+            return trend_signal(label, d1, cs), d1, []
+        h1 = fetch_ohlcv(item["symbol"], mkt, "1h", 500, offline)
+        return day_signal(label, h1, d1, cs), h1, []
     df = fetch_ohlcv(item["symbol"], item["market"], item["timeframe"], 500, offline)
     df_htf = fetch_ohlcv(item["symbol"], item["market"], item["htf"], 200, offline) if item.get("htf") else None
     ns, titles = (None, [])
     if cfg["news"]["enabled"] and not offline:
         ns, titles = news_sentiment(item.get("keywords"), cfg["news"]["max_items"])
-    label = item["symbol"] + ".BA" if item["market"] == "byma" and not item["symbol"].endswith(".BA") else item["symbol"]
+    label = label_for(item["symbol"], item["market"])
     sig = evaluate(df, strategy_for(cfg, item["market"]), label, ns, df_htf)
     return sig, df, titles
 
@@ -75,12 +87,13 @@ def analyze(item, cfg, offline):
 def get_brokers(cfg, mode, confirm_live):
     paper = PaperBroker(cfg["state_dir"], cfg["capital"], cfg["risk"]["fee"], cfg["risk"]["slippage"], cfg.get("fees"))
     if mode != "live":
-        return {"crypto": paper, "us": paper, "byma": paper}
+        return {"crypto": paper, "crypto_d": paper, "crypto_t": paper, "us": paper, "byma": paper}
     if not (cfg["live"]["enabled"] and confirm_live):
         sys.exit("Modo live bloqueado: requiere live.enabled: true en config Y el flag --confirm-live.")
     from .brokers.binance_live import BinanceBroker
     from .brokers.alpaca_live import AlpacaBroker
-    return {"crypto": BinanceBroker(cfg["live"]["crypto_testnet"]),
+    bn = BinanceBroker(cfg["live"]["crypto_testnet"])
+    return {"crypto": bn, "crypto_d": bn, "crypto_t": bn,
             "us": AlpacaBroker(cfg["live"]["alpaca_paper"]),
             "byma": paper}  # BYMA sigue en paper hasta implementar broker local
 
@@ -104,12 +117,20 @@ def alerted_before(state_dir, sig):
 
 def items_of(cfg, markets=None):
     """Watchlist + universo + CEDEARs (sin duplicados). markets filtra, ej. {"crypto"}."""
-    return [it for it in _all_items(cfg) if not markets or it["market"] in markets]
+    return [it for it in _all_items(cfg) if not markets or it["market"] in markets or base_market(it["market"]) in markets]
 
 
 def _all_items(cfg):
-    items = list(cfg.get("watchlist") or [])
-    seen = {(w["symbol"], w["market"]) for w in items}
+    cs = cfg.get("crypto_strategies") or {}
+    strats = [m for m, k in (("crypto_d", "diario"), ("crypto_t", "tendencia")) if (cs.get(k) or {}).get("enabled", True)]
+    items, seen = [], set()
+    for w in cfg.get("watchlist") or []:
+        if w["market"] == "crypto":  # cada cripto se analiza con las dos estrategias
+            for m in strats:
+                if (w["symbol"], m) not in seen:
+                    seen.add((w["symbol"], m)); items.append({**w, "market": m})
+        elif (w["symbol"], w["market"]) not in seen:
+            seen.add((w["symbol"], w["market"])); items.append(w)
     uni = cfg.get("universe") or {}
     for mkt in ("us", "byma", "crypto"):
         for sym in uni.get(mkt) or []:
@@ -154,7 +175,7 @@ def market_open(market, now=None):
     No contempla feriados: en un feriado no hay velas nuevas y el bot simplemente no encuentra señales nuevas."""
     from datetime import datetime
     from zoneinfo import ZoneInfo
-    if market == "crypto":
+    if is_crypto(market):
         return True
     tz = ZoneInfo("America/Argentina/Buenos_Aires" if market == "byma" else "America/New_York")
     t = (now or datetime.now(ZoneInfo("UTC"))).astimezone(tz)
@@ -190,6 +211,8 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False, ma
     brokers = get_brokers(cfg, mode, confirm_live) if mode in ("paper", "live") else None
     results, last_px, px_cache = [], {}, {}
     ops = {"buy": 0, "sell": 0}
+    if mode == "paper" and brokers:
+        migrate_crypto(cfg, brokers["crypto"], j, offline)
 
     # 1) analizar todo
     for item in items_of(cfg, markets):
@@ -229,6 +252,11 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False, ma
                     if pos.get("target") and bar["high"] >= pos["target"]:
                         why, px = "objetivo", max(float(bar["open"]), pos["target"])
                         break
+            if not why and mkt == "crypto_d" and pos.get("opened"):
+                import pandas as pd
+                held_h = (pd.Timestamp.now(tz="UTC") - pd.Timestamp(pos["opened"])).total_seconds() / 3600
+                if held_h >= float(((cfg.get("crypto_strategies") or {}).get("diario") or {}).get("max_hold_h", 24)):
+                    why, px = "tiempo", float(last["close"])
             if not why and sig.action == "SELL" and market_open(mkt):
                 why, px = "señal", sig.price
             if not why and hasattr(b, "s"):
@@ -238,13 +266,15 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False, ma
                 sold_qty = float(pos["qty"])  # se guarda antes: la venta modifica la posición
                 ops["sell"] += 1
                 try:
-                    detail = dumps(explain_exit(why, dict(pos), px, sig, None))
+                    detail = dumps(explain_exit(why, dict(pos), px, sig, None) if mkt not in CRYPTO_STRATS
+                                   else {**explain_exit(why, dict(pos), px, sig, None),
+                                         "resumen": f"Venta por {why} con resultado {px / pos['avg'] - 1:+.1%} ({MKT[mkt]})."})
                 except Exception as e:
                     detail = ""; print(f"[{sym}] sin detalle: {e}")
                 pnl, fill = b.sell(sym, mkt, sold_qty, px)
                 j.log(kind="trade", mode=mode, symbol=sym, market=mkt, side="sell", qty=sold_qty,
                       price=fill, pnl=pnl if pnl is not None else "", note=why, detail=detail)
-                notify(f"🔴 [{mode}] Venta {sym} @ {fill:,.4f} ({why})" + (f" | PnL {pnl:+,.2f}" if pnl is not None else ""))
+                notify(f"🔴 [{mode}] {MKT.get(mkt, mkt)}: venta {sym} @ {fill:,.4f} ({why})" + (f" | PnL {pnl:+,.2f}" if pnl is not None else ""))
 
         # 3) entradas: las señales más fuertes primero
         buys = sorted([r for r in results if r[1].action == "BUY"], key=lambda r: -r[1].score)
@@ -256,15 +286,27 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False, ma
                 continue
             if b.position(sym):
                 continue
-            ok, reason = risk.can_open(mkt, b.open_count(mkt), j.realized_today(mkt))
+            slots = sum(1 for it in items_of(cfg) if it["market"] == "crypto_t") or 1
+            ok, reason = risk.can_open(mkt, b.open_count(mkt), j.realized_today(mkt),
+                                       max_open=slots if mkt == "crypto_t" else None)
             if not ok:
                 print(f"[{sym}] compra bloqueada: {reason}")
                 continue
-            base = sym[:-3] if sym.endswith(".BA") else sym
-            if any(o != sym and (o[:-3] if o.endswith(".BA") else o) == base for o in held_symbols(brokers)):
-                print(f"[{sym}] ya hay posición en el mismo activo por otro mercado; no se duplica")
+            if not is_crypto(mkt):
+                base = base_symbol(sym)
+                if any(o != sym and base_symbol(o) == base and not is_crypto((b.s["positions"].get(o) or {}).get("market", ""))
+                       for o in held_symbols(brokers)):
+                    print(f"[{sym}] ya hay posición en el mismo activo por otro mercado; no se duplica")
+                    continue
+            if mkt == "crypto_d" and hasattr(b, "s") and b.s.get("last_entry", {}).get(sym) == sig.bar_time:
+                print(f"[{sym}] esta señal ya se operó; se espera una nueva")
                 continue
-            qty = risk.size(mkt, sig.price, sig.stop, b.cash(mkt))
+            if mkt == "crypto_t":  # peso igual para cada cripto
+                fee = (cfg.get("fees") or {}).get(mkt, cfg["risk"]["fee"])
+                alloc = min(cfg["capital"].get(mkt, 0) / slots, b.cash(mkt) * 0.995)
+                qty = max(alloc / (sig.price * (1 + fee) * (1 + cfg["risk"]["slippage"])), 0.0)
+            else:
+                qty = risk.size(mkt, sig.price, sig.stop, b.cash(mkt))
             if mkt == "byma":
                 qty = float(int(qty))  # en BYMA se compran acciones enteras
             min_val = float((cfg.get("min_order") or {}).get(mkt, 0))
@@ -277,16 +319,19 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False, ma
                 except Exception as e:
                     print(f"[{sym}] compra no ejecutada: {e}")
                     continue
+                if mkt == "crypto_d" and hasattr(b, "s"):
+                    b.s.setdefault("last_entry", {})[sym] = sig.bar_time; b._save()
                 try:
                     st = strategy_for(cfg, mkt)
-                    detail = dumps(explain_entry(sig, prepare(df, st).iloc[-1], df, {"strategy": st}))
+                    detail = dumps(getattr(sig, "explain", None) or explain_entry(sig, prepare(df, st).iloc[-1], df, {"strategy": st}))
                 except Exception as e:
                     detail = ""; print(f"[{sym}] sin detalle: {e}")
                 j.log(kind="trade", mode=mode, symbol=sym, market=mkt, side="buy", qty=qty, price=fill,
                       stop=sig.stop, target=sig.target, note=f"score {sig.score}", detail=detail)
                 ops["buy"] += 1
-                notify(f"🟢 [{mode}] Compra {qty:.4f} {sym} @ {fill:,.4f} | score {sig.score:+.2f} | "
-                       f"stop {sig.stop:,.4f} | obj {sig.target:,.4f}")
+                obj = "sale cuando se rompe la tendencia" if mkt == "crypto_t" else f"obj {sig.target:,.4f}"
+                notify(f"🟢 [{mode}] {MKT.get(mkt, mkt)}: compra {qty:.4f} {sym} @ {fill:,.4f} | "
+                       f"stop {sig.stop:,.4f} | {obj}")
 
     if summary and results:
         from datetime import datetime
@@ -298,9 +343,66 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False, ma
 
     if results and any(r[0]["market"] == "byma" for r in results):
         arb_alerts(cfg, px_cache, offline)
+    if results and any(r[0]["market"] in ("us", "byma") for r in results):
+        try:
+            movers.big_move_alerts(cfg, results, offline)
+            movers.maybe_digest(cfg, results, "mediodia", offline)
+        except Exception as e:
+            print(f"[noticias] {e}")
+    if markets is not None and "crypto" in markets:
+        try:
+            movers.maybe_digest(cfg, None, "cierre", offline, scan=lambda: scan_all(cfg, offline, {"us", "byma"})[0])
+        except Exception as e:
+            print(f"[noticias] {e}")
     if mode == "paper" and brokers and results:
         refresh_panel(cfg, brokers["crypto"], j, results, px_cache, last_px, offline, record=True)
     return ops, len(results)
+
+
+def migrate_crypto(cfg, paper, j, offline=False):
+    """Una sola vez: cierra las posiciones de la estrategia cripto anterior y reinicia la curva de patrimonio."""
+    if paper.s.get("version", 1) >= 2:
+        return
+    from datetime import datetime
+    for sym, p in list(paper.s["positions"].items()):
+        if p.get("market") != "crypto":
+            continue
+        try:
+            px = float(fetch_ohlcv(base_symbol(sym), "crypto", "1h", 5, offline)["close"].iloc[-1])
+        except Exception as e:
+            print(f"[migración] {sym}: {e}"); continue
+        qty = float(p["qty"])
+        pnl, fill = paper.sell(sym, "crypto", qty, px)
+        j.log(kind="trade", mode="paper", symbol=sym, market="crypto", side="sell", qty=qty, price=fill,
+              pnl=pnl, note="cambio de estrategia")
+    path = os.path.join(cfg["state_dir"], "equity_intraday.csv")
+    if os.path.exists(path):
+        os.replace(path, os.path.join(cfg["state_dir"], f"equity_intraday_v1_{datetime.now():%Y%m%d}.csv"))
+    paper.s["version"] = 2
+    paper._save()
+    notify("🔁 <b>Cripto: nueva etapa</b>\nArrancan dos estrategias en paper, con capital separado:\n"
+           "• Cripto tendencia [T]: velas diarias, sostiene semanas.\n"
+           "• Cripto diario [D]: velas de 1 h, cierra en 24 h como máximo.\n"
+           "Las posiciones de la estrategia anterior se cerraron al precio actual.")
+
+
+def duel_lines(paper, j, last_px, cfg):
+    """Comparación de las dos estrategias de cripto."""
+    from .informe import pair_trades, trade_stats
+    import csv
+    with open(j.path) as f:
+        rows = sorted(csv.DictReader(f), key=lambda r: r["time"])
+    closed, _ = pair_trades(rows)
+    out = ["", "⚔️ <b>Duelo cripto</b>"]
+    for m in CRYPTO_STRATS:
+        cap = float(cfg["capital"].get(m, 0))
+        eq = paper.s["cash"].get(m, 0.0) + sum(p["qty"] * last_px.get(s, p["avg"]) for s, p in paper.s["positions"].items()
+                                               if p["market"] == m)
+        st = trade_stats([c for c in closed if c["market"] == m])
+        n_open = sum(1 for p in paper.s["positions"].values() if p["market"] == m)
+        extra = f" | {st['n']} cerradas, acierto {st['win_rate']:.0%}" if st else " | sin operaciones cerradas"
+        out.append(f"{MKT[m]}: {eq:,.2f} USDT ({(eq / cap - 1) if cap else 0:+.2%}) | {n_open} abiertas{extra}")
+    return out
 
 
 def held_symbols(brokers):
@@ -433,6 +535,11 @@ def cmd_daily(cfg, offline=False):
     except Exception as e:
         print(f"[equity] {e}")
     refresh_panel(cfg, paper, j, results, px_cache, last_px, offline)
+    extra = duel_lines(paper, j, last_px, cfg) + extra
+    try:
+        extra += movers.digest_lines(cfg, results, offline, top=3)
+    except Exception as e:
+        print(f"[noticias] {e}")
     extra += paper_lines(paper, last_px, j)
     notify(f"🌙 <b>Resumen del día {datetime.now():%d/%m}</b>\n" + "\n".join(lines + extra)
            + "\n⚠️ No es consejo financiero. DYOR.")
@@ -448,9 +555,9 @@ def resolve_symbol(raw, cfg):
     if not s:
         return []
     if "/" in s:
-        return [(s, "crypto")]
+        return [(s, m) for m in CRYPTO_STRATS]
     if s in CRYPTO_BASES:
-        return [(f"{s}/USDT", "crypto")]
+        return [(f"{s}/USDT", m) for m in CRYPTO_STRATS]
     if s.endswith(".BA"):
         return [(s[:-3], "byma")]
     found = [(it["symbol"], it["market"]) for it in items_of(cfg) if it["symbol"].upper() == s]
@@ -459,24 +566,23 @@ def resolve_symbol(raw, cfg):
 
 def quote_text(sym, mkt, cfg, offline=False):
     item = next((it for it in items_of(cfg) if it["symbol"].upper() == sym.upper() and it["market"] == mkt), None) \
-        or {"symbol": sym, "market": mkt, "timeframe": "4h" if mkt == "crypto" else "1d",
-            "htf": "1d" if mkt == "crypto" else "1wk"}
+        or {"symbol": sym, "market": mkt, "timeframe": "1d", "htf": "1wk"}
     sig, df, titles = analyze(item, cfg, offline)
-    daily = df if item["timeframe"] == "1d" else fetch_ohlcv(sym, mkt, "1d", 60, offline)
+    daily = df if (item["timeframe"] == "1d" and mkt != "crypto_d") or mkt == "crypto_t" else fetch_ohlcv(sym, mkt, "1d", 60, offline)
     c = daily["close"]
     chg = lambda n: f"{c.iloc[-1] / c.iloc[-1 - n] - 1:+.1%}" if len(c) > n else "s/d"
-    cur = {"crypto": "USDT", "us": "USD", "byma": "ARS"}[mkt]
+    cur = CUR[mkt]
     trend = {1: "alcista", -1: "bajista", 0: "lateral"}
     from .strategy import prepare, trend_of
     d = prepare(df, strategy_for(cfg, mkt))
     last = d.iloc[-1]
     win = df.tail(50)
-    lines = [f"💹 <b>{sig.symbol}</b> ({ {'crypto': 'Cripto', 'us': 'EE.UU.', 'byma': 'BYMA'}[mkt] }): {sig.price:,.2f} {cur}",
+    lines = [f"💹 <b>{sig.symbol}</b> ({MKT[mkt]}): {sig.price:,.2f} {cur}",
              f"Día {chg(1)} | 5 ruedas {chg(5)} | 1 mes {chg(21)}",
              f"Señal: {EMOJI[sig.action]} {sig.action} (score {sig.score:+.2f})",
              f"RSI {sig.rsi:.0f} | MACD {'↑' if last['macd_hist'] > 0 else '↓'} | Tendencia {trend[trend_of(last)]}",
              f"Soporte {win['low'].min():,.2f} | Resistencia {win['high'].max():,.2f}",
-             f"Stop técnico (ATR): {sig.price - cfg['strategy']['atr_stop_mult'] * sig.atr:,.2f}"]
+             f"Stop técnico: {sig.stop:,.2f}" if sig.stop else ""]
     paper = PaperBroker(cfg["state_dir"], cfg["capital"])
     pos = paper.position(sig.symbol)
     if pos:
@@ -506,7 +612,7 @@ def current_prices(paper, offline=False):
     """Último precio de cada posición abierta."""
     last_px = {}
     for label, p in paper.s["positions"].items():
-        sym = label[:-3] if label.endswith(".BA") else label
+        sym = base_symbol(label)
         try:
             last_px[label] = float(fetch_ohlcv(sym, p["market"], "1d", 5, offline)["close"].iloc[-1])
         except Exception as e:
@@ -542,10 +648,10 @@ def cmd_informe(cfg, dias=7, offline=False):
             f.write(md)
     st = sm["stats"]
     lines = [f"📑 <b>Informe de análisis, últimos {dias} días</b>"]
-    for m in ("crypto", "us", "byma"):
-        cap = sm["cap"][m]
+    for m in ACTIVE:
+        cap = sm["cap"].get(m)
         if cap:
-            lines.append(f"{m}: patrimonio {sm['eq'].get(m, 0):,.2f} ({sm['eq'].get(m, 0) / cap - 1:+.2%})")
+            lines.append(f"{MKT[m]}: patrimonio {sm['eq'].get(m, 0):,.2f} ({sm['eq'].get(m, 0) / cap - 1:+.2%})")
     lines.append(f"Operaciones cerradas: {sm['closed']}" + (f" | acierto {st['win_rate']:.0%}" if st else ""))
     lines.append(f"Posiciones abiertas: {sm['open']}")
     lines.append("📎 El informe completo va adjunto en Telegram y queda en GitHub: state/informe.md. "
@@ -574,7 +680,9 @@ def cmd_report(cfg, a):
         motivos[r["note"]] = motivos.get(r["note"], 0) + 1
     if motivos:
         lines.append("Cierres por: " + ", ".join(f"{k} {v}" for k, v in motivos.items()))
-    lines += paper_lines(paper, current_prices(paper, getattr(a, "offline", False)), j)[1:]
+    px_now = current_prices(paper, getattr(a, "offline", False))
+    lines += duel_lines(paper, j, px_now, cfg)
+    lines += paper_lines(paper, px_now, j)[1:]
     if cfg.get("ccl", {}).get("enabled", True):
         lines += ccl_lines(cfg, {}, getattr(a, "offline", False))
     lines.append("⚠️ No es consejo financiero. DYOR.")
@@ -650,6 +758,7 @@ def main():
     q.add_argument("simbolo", nargs="?", default="")
     sub.add_parser("cartera", help="cartera simulada con precios actuales")
     sub.add_parser("panel", help="regenera el panel web (state/panel.html)")
+    sub.add_parser("noticias", help="subas y bajas del día en acciones, con titulares")
     inf = sub.add_parser("informe", help="informe de análisis en Markdown con prompt para un chat de análisis")
     inf.add_argument("--dias", type=int, default=7)
 
@@ -704,6 +813,9 @@ def main():
         cmd_quote(cfg, a.simbolo, a.offline)
     elif a.cmd == "informe":
         cmd_informe(cfg, a.dias, a.offline)
+    elif a.cmd == "noticias":
+        results = scan_all(cfg, a.offline, {"us", "byma"})[0]
+        movers.send_digest(cfg, results, "pedido", a.offline)
     elif a.cmd == "panel":
         cmd_panel(cfg, a.offline)
     elif a.cmd == "cartera":

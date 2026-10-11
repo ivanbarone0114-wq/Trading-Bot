@@ -7,8 +7,7 @@ from .cedears import arbitrage
 from .informe import pair_trades, trade_stats
 from .strategy import prepare, trend_of
 
-MKT = {"crypto": "Cripto", "us": "EE.UU.", "byma": "BYMA"}
-CUR = {"crypto": "USDT", "us": "USD", "byma": "ARS"}
+from .markets import MKT, CUR, ACTIVE, CRYPTO_STRATS
 
 
 def record_equity(state_dir, paper, last_px, ccl):
@@ -16,18 +15,18 @@ def record_equity(state_dir, paper, last_px, ccl):
     eq = dict(paper.s["cash"])
     for sym, p in paper.s["positions"].items():
         eq[p["market"]] = eq.get(p["market"], 0.0) + p["qty"] * last_px.get(sym, p["avg"])
-    total = eq.get("crypto", 0) + eq.get("us", 0) + (eq.get("byma", 0) / ccl if ccl else 0)
+    total = sum(eq.get(m, 0) for m in ACTIVE if m != "byma") + (eq.get("byma", 0) / ccl if ccl else 0)
     path = os.path.join(state_dir, "equity_intraday.csv")
     rows = []
     if os.path.exists(path):
         with open(path) as f:
             rows = list(csv.DictReader(f))
-    rows.append({"time": datetime.now().strftime("%Y-%m-%d %H:%M"), "crypto": round(eq.get("crypto", 0), 4),
-                 "us": round(eq.get("us", 0), 4), "byma": round(eq.get("byma", 0), 2),
-                 "ccl": round(ccl, 2) if ccl else "", "total_usd": round(total, 4)})
-    rows = rows[-3000:]
+    row = {"time": datetime.now().strftime("%Y-%m-%d %H:%M"), "ccl": round(ccl, 2) if ccl else "", "total_usd": round(total, 4)}
+    row.update({m: round(eq.get(m, 0), 4) for m in ACTIVE})
+    rows.append(row)
+    rows = rows[-4000:]
     with open(path, "w", newline="") as f:
-        w = csv.DictWriter(f, ["time", "crypto", "us", "byma", "ccl", "total_usd"])
+        w = csv.DictWriter(f, ["time", *ACTIVE, "ccl", "total_usd"], extrasaction="ignore", restval="")
         w.writeheader(); w.writerows(rows)
     return eq, total
 
@@ -79,6 +78,7 @@ def write_panel(cfg, paper, journal, results, px_cache, last_px, offline=False, 
     with open(journal.path) as f:
         rows = sorted(csv.DictReader(f), key=lambda r: r["time"])
     closed, _ = pair_trades(rows)
+    closed = [c for c in closed if c["market"] in ACTIVE]  # la estrategia cripto anterior queda solo en el historial
     stats = trade_stats(closed)
     last_buy = {}
     ops = []
@@ -109,11 +109,16 @@ def write_panel(cfg, paper, journal, results, px_cache, last_px, offline=False, 
                           "detail": last_buy.get(sym)})
     cap = cfg["capital"]
     markets = []
-    for m in ("crypto", "us", "byma"):
-        e = eq.get(m, 0.0)
-        markets.append({"key": m, "name": MKT[m], "cur": CUR[m], "capital": cap[m], "equity": e,
-                        "ret": e / cap[m] - 1 if cap[m] else None, "cash": paper.s["cash"].get(m, 0.0),
-                        "invested": 1 - paper.s["cash"].get(m, 0.0) / e if e else 0})
+    for m in ACTIVE:
+        e = eq.get(m, paper.s["cash"].get(m, cap.get(m, 0.0)))
+        c_m = float(cap.get(m, 0) or 0)
+        st_m = trade_stats([c for c in closed if c["market"] == m])
+        markets.append({"key": m, "name": MKT[m], "cur": CUR[m], "capital": c_m, "equity": e,
+                        "ret": e / c_m - 1 if c_m else None, "cash": paper.s["cash"].get(m, 0.0),
+                        "invested": 1 - paper.s["cash"].get(m, 0.0) / e if e else 0,
+                        "n": st_m["n"] if st_m else 0, "win": st_m["win_rate"] if st_m else None,
+                        "pf": st_m["pf"] if st_m else None,
+                        "open": sum(1 for p in paper.s["positions"].values() if p["market"] == m)})
     to_usd = lambda m, v: v / ccl if m == "byma" and ccl else (0 if m == "byma" else v)
     total_usd = sum(to_usd(m["key"], m["equity"]) for m in markets)
     cap_usd = sum(to_usd(m["key"], m["capital"]) for m in markets)
@@ -124,7 +129,13 @@ def write_panel(cfg, paper, journal, results, px_cache, last_px, offline=False, 
     path = os.path.join(cfg["state_dir"], "equity_intraday.csv")
     if os.path.exists(path):
         with open(path) as f:
-            curve = [{"t": r["time"], "v": float(r["total_usd"])} for r in csv.DictReader(f) if r["total_usd"]]
+            for r in csv.DictReader(f):
+                if r.get("total_usd"):
+                    pt = {"t": r["time"], "v": float(r["total_usd"])}
+                    for m in CRYPTO_STRATS:
+                        if r.get(m):
+                            pt[m] = float(r[m])
+                    curve.append(pt)
 
     # señales (las últimas conocidas de cada activo)
     sigs = sig_rows if sig_rows is not None else [sig_row(i, s, df, cfg["strategy"]) for i, s, df in results]
@@ -215,6 +226,9 @@ section{display:none} section.on{display:block}
 <section id="t-res" class="on">
   <div class="card hero"><div class="k">Patrimonio total (USD, BYMA al CCL)</div><div class="big" id="total"></div><div id="totsub" class="sub"></div></div>
   <div class="card"><div class="grid" id="kpis"></div></div>
+  <div class="card"><h2>Duelo cripto: tendencia contra diario</h2><div class="grid" id="duel"></div>
+    <div class="chart" style="margin-top:12px"><canvas id="cDuel"></canvas></div>
+    <p class="note">Las dos arrancan con el mismo capital. La de tendencia opera poco y sostiene semanas; la diaria cierra cada operación en 24 h como máximo. En la prueba con datos reales de BTC 2022-2026, la de tendencia ganó y la diaria perdió.</p></div>
   <div class="card"><h2>Curva de patrimonio</h2><div class="chart"><canvas id="cEq"></canvas></div><p class="note" id="eqnote"></p></div>
   <div class="card"><h2>Resultado por operación</h2><div class="chart"><canvas id="cHist"></canvas></div><p class="note">Cada barra cuenta operaciones cerradas en ese rango de resultado. Rojo: pérdidas. Azul: ganancias.</p></div>
   <div class="card"><h2>Por mercado</h2><ul class="list" id="mkts"></ul></div>
@@ -268,18 +282,28 @@ $('#kpis').innerHTML = [
   ['Operaciones cerradas', K.n_closed], ['Posiciones abiertas', K.n_open],
   ['CCL de referencia', K.ccl ? '$ ' + nf(K.ccl) : '—'], ['Señales analizadas', D.signals.length],
 ].map(([k, v]) => `<div><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+$('#duel').innerHTML = D.markets.filter(m => m.key.startsWith('crypto')).map(m => `<div><div class="k">${m.name}</div>
+  <div class="v ${cls(m.ret)}">${pc(m.ret, 2)}</div><div class="sub">${nf(m.equity)} USDT · ${m.open} abiertas · ${m.n} cerradas${m.win == null ? '' : ' · acierto ' + nf(m.win * 100, 0) + '%'}${m.pf == null ? '' : ' · PF ' + nf(m.pf)}</div></div>`).join('');
 $('#mkts').innerHTML = D.markets.map(m => `<li><div class="row"><b>${m.name}</b><span class="${cls(m.ret)}">${pc(m.ret, 2)}</span></div>
   <div class="sub">Patrimonio ${nf(m.equity)} ${m.cur} · capital ${nf(m.capital, 0)} · efectivo ${nf(m.cash)} · invertido ${nf(m.invested * 100, 0)}%</div></li>`).join('');
 
 if (window.Chart) {
   Chart.defaults.color = css('--muted'); Chart.defaults.font.family = 'Archivo, system-ui, sans-serif';
   const grid = {color: css('--line') + '88'};
+  const dpts = D.curve.filter(p => p.crypto_d != null && p.crypto_t != null);
+  if (dpts.length > 1) {
+    const capOf = k => (D.markets.find(m => m.key === k) || {}).capital || 1;
+    new Chart($('#cDuel'), {type: 'line', data: {labels: dpts.map(p => p.t.slice(5)), datasets: [
+      {label: 'Tendencia', data: dpts.map(p => (p.crypto_t / capOf('crypto_t') - 1) * 100), borderColor: css('--accent'), pointRadius: 0, tension: .25, borderWidth: 2},
+      {label: 'Diario', data: dpts.map(p => (p.crypto_d / capOf('crypto_d') - 1) * 100), borderColor: css('--hold'), pointRadius: 0, tension: .25, borderWidth: 2}]},
+      options: {maintainAspectRatio: false, plugins: {legend: {display: true}}, scales: {x: {grid, ticks: {maxTicksLimit: 6}}, y: {grid, ticks: {callback: v => v.toFixed(1) + '%'}}}}});
+  } else { const w = $('#cDuel').parentElement; w.style.height = 'auto'; w.innerHTML = '<p class="empty">La comparación aparece después de algunos ciclos.</p>'; }
   if (D.curve.length > 1) {
     new Chart($('#cEq'), {type: 'line', data: {labels: D.curve.map(p => p.t.slice(5)),
       datasets: [{data: D.curve.map(p => p.v), borderColor: css('--accent'), backgroundColor: css('--accent') + '22', fill: true, pointRadius: 0, tension: .25, borderWidth: 2}]},
       options: {maintainAspectRatio: false, plugins: {legend: {display: false}}, scales: {x: {grid, ticks: {maxTicksLimit: 6}}, y: {grid}}}});
     $('#eqnote').textContent = `${D.curve.length} registros, uno por ciclo del bot.`;
-  } else { $('#cEq').parentElement.innerHTML = '<p class="empty">La curva aparece después de algunos ciclos del bot.</p>'; }
+  } else { const w = $('#cEq').parentElement; w.style.height = 'auto'; w.innerHTML = '<p class="empty">La curva aparece después de algunos ciclos del bot.</p>'; }
   const rets = D.closed.map(c => c.ret).filter(r => r != null);
   if (rets.length) {
     const lo = Math.floor(Math.min(...rets, 0) * 100), hi = Math.ceil(Math.max(...rets, 0) * 100);

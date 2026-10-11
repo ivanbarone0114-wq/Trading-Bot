@@ -14,14 +14,29 @@ def yf_symbol(symbol: str, market: str) -> str:
     return symbol
 
 
+_MEMO = {}
+
+
 def fetch_ohlcv(symbol, market, timeframe="1d", limit=500, offline=False):
+    """Velas OHLCV. Dentro de una misma ejecución, los pedidos repetidos se sirven de memoria."""
     if offline or market == "synthetic":
         return synthetic_ohlcv(n=limit, seed=zlib.crc32(f"{symbol}{timeframe}".encode()))
+    base = "crypto" if str(market).startswith("crypto") else market
+    key = (symbol, base, timeframe)
+    hit = _MEMO.get(key)
+    if hit is not None and len(hit) >= min(limit, len(hit)) and hit.attrs.get("limit", 0) >= limit:
+        return hit.tail(limit).copy()
+    df = _fetch(symbol, base, timeframe, limit)
+    df.attrs["limit"] = limit
+    _MEMO[key] = df
+    return df.copy()
 
+
+def _fetch(symbol, market, timeframe, limit):
     if market == "crypto":
         # Binance bloquea servidores de EE.UU. (como los de GitHub): se prueba en orden y, si todo falla, Yahoo.
         import ccxt
-        for ex_id in os.getenv("CRYPTO_SOURCES", "binance,kraken").split(","):
+        for ex_id in os.getenv("CRYPTO_SOURCES", "kraken,binance").split(","):
             try:
                 ex = getattr(ccxt, ex_id.strip())({"enableRateLimit": True})
                 raw = ex.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
@@ -31,7 +46,7 @@ def fetch_ohlcv(symbol, market, timeframe="1d", limit=500, offline=False):
                     return df.set_index("ts").astype(float).dropna()
             except Exception as e:
                 print(f"[{symbol}] {ex_id} no disponible ({e.__class__.__name__}), probando otra fuente")
-        return fetch_ohlcv(symbol.split("/")[0] + "-USD", "us", timeframe, limit)
+        return _fetch(symbol.split("/")[0] + "-USD", "us", timeframe, limit)
 
     if market in ("us", "byma"):
         import yfinance as yf
