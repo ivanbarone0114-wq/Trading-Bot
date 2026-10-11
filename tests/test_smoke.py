@@ -21,8 +21,9 @@ def test_signal_fields():
 
 def test_risk_sizing():
     r = RiskManager(CFG["risk"], {"us": 1000})
-    q = r.size("us", 100, 95)            # riesgo 1% = 10 → 2 u; tope 20% = 2 u
-    assert abs(q - 2.0) < 1e-9
+    q = r.size("us", 100, 95)
+    exp = min(1000 * CFG["risk"]["risk_per_trade"] / 5, 1000 * CFG["risk"]["max_position_pct"] / 100)
+    assert abs(q - exp) < 1e-9
 
 
 def test_paper_roundtrip():
