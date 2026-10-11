@@ -9,10 +9,10 @@ capital:                 # capital asignado por mercado (en la moneda de cada me
 
 watchlist:
   # --- Cripto (24 h, velas de 15 min) ---
-  - {symbol: BTC/USDT, market: crypto, timeframe: 15m, htf: 1h, keywords: [bitcoin, btc]}
-  - {symbol: ETH/USDT, market: crypto, timeframe: 15m, htf: 1h, keywords: [ethereum]}
-  - {symbol: SOL/USDT, market: crypto, timeframe: 15m, htf: 1h, keywords: [solana]}
-  - {symbol: XRP/USDT, market: crypto, timeframe: 15m, htf: 1h, keywords: [xrp, ripple]}
+  - {symbol: BTC/USDT, market: crypto, timeframe: 1h, htf: 4h, keywords: [bitcoin, btc]}
+  - {symbol: ETH/USDT, market: crypto, timeframe: 1h, htf: 4h, keywords: [ethereum]}
+  - {symbol: SOL/USDT, market: crypto, timeframe: 1h, htf: 4h, keywords: [solana]}
+  - {symbol: XRP/USDT, market: crypto, timeframe: 1h, htf: 4h, keywords: [xrp, ripple]}
 
   # --- BYMA (acciones locales, en ARS) ---
   - {symbol: GGAL,  market: byma, timeframe: 1d, htf: 1wk, keywords: [galicia, merval]}
@@ -98,12 +98,19 @@ cedears:
     - {symbol: QQQ,   ratio: 20}
 strategy_overrides:
   crypto:
-    ema_fast: 9
-    ema_slow: 21
-    atr_stop_mult: 1.5
-    reward_risk: 1.5
-    threshold: 0.30
+    ema_fast: 12
+    ema_slow: 26
+    atr_stop_mult: 2.0
+    reward_risk: 2.0
+    threshold: 0.40
+
 fees:
   crypto: 0.001
   us: 0.006
   byma: 0.006
+
+# Monto mínimo por compra (evita posiciones "polvo" que ocupan cupos)
+min_order:
+  crypto: 10
+  us: 10
+  byma: 10000
