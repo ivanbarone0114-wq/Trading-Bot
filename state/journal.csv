@@ -425,3 +425,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-13T14:32:29+00:00,alert,paper,COME.BA,byma,SELL,,38.599998474121094,,,,score -0.636,
 2026-10-13T14:40:58+00:00,alert,paper,ETH/USDT [T],crypto_t,SELL,,2447.17,2187.9811518496545,24471.7,,score -0.169,
 2026-10-13T14:41:29+00:00,alert,paper,GGAL.BA,byma,SELL,,5940.0,,,,score -0.434,
+2026-10-13T14:51:54+00:00,alert,paper,AAPL.BA,byma,BUY,,27920.0,26725.87126819329,30308.25746361342,,score 0.636,
