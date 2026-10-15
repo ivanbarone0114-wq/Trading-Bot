@@ -480,3 +480,9 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-15T00:01:40+00:00,alert,paper,LINK/USDT [T],crypto_t,SELL,,12.43781,10.19047616213593,124.3781,,score -0.05,
 2026-10-15T00:01:44+00:00,alert,paper,AVAX/USDT [T],crypto_t,BUY,,10.011,7.935779385598594,100.10999999999999,,score 0.445,
 2026-10-15T00:01:44+00:00,trade,paper,LINK/USDT [T],crypto_t,sell,0.9585103940617344,12.431591095000002,,,-0.5961065299964812,señal,"{""resumen"":""Venta por señal con resultado -4.5% (Cripto tendencia)."",""pro"":[""El score cayó a -0.05, por debajo del umbral de salida"",""Salió antes de tocar el stop, con -4.5%""],""contra"":[],""ret"":-0.0453,""score"":-0.05}"
+2026-10-15T13:32:42+00:00,alert,paper,YPF,us,BUY,,51.580101013183594,48.249668482297245,58.2409660749563,,score 0.56,
+2026-10-15T13:32:43+00:00,alert,paper,AAPL,us,BUY,,345.760009765625,332.66083064471934,371.95836800743626,,score 0.636,
+2026-10-15T13:32:43+00:00,alert,paper,MSFT,us,BUY,,531.655029296875,509.6637105182606,575.6376668541038,,score 0.5,
+2026-10-15T13:32:45+00:00,alert,paper,AVGO,us,SELL,,338.07501220703125,,,,score -0.636,
+2026-10-15T13:32:47+00:00,alert,paper,PFE,us,BUY,,29.84000015258789,28.699201549763774,32.12159735823612,,score 0.455,
+2026-10-15T13:32:49+00:00,alert,paper,DIS,us,BUY,,110.752197265625,106.67384456366524,118.90890266954452,,score 0.5,
