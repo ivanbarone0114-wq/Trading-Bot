@@ -540,3 +540,12 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-16T16:12:49+00:00,alert,paper,VALO.BA,byma,SELL,,525.0,,,,score -0.636,
 2026-10-16T17:02:33+00:00,alert,paper,MELI,us,SELL,,1827.078369140625,,,,score -0.354,
 2026-10-16T17:24:22+00:00,alert,paper,NFLX,us,SELL,,70.47979736328125,,,,score -0.409,
+2026-10-17T00:01:35+00:00,alert,paper,BTC/USDT [T],crypto_t,BUY,,81602.2,74897.0954253086,816022.0,,score 0.122,
+2026-10-17T00:01:40+00:00,alert,paper,ETH/USDT [T],crypto_t,SELL,,2423.34,2134.4222751971247,24233.4,,score -0.219,
+2026-10-17T00:01:45+00:00,alert,paper,SOL/USDT [T],crypto_t,SELL,,104.42,89.13289714216755,1044.2,,score -0.201,
+2026-10-17T00:01:49+00:00,alert,paper,XRP/USDT [T],crypto_t,SELL,,1.31193,1.11022334422706,13.1193,,score -0.432,
+2026-10-17T00:01:54+00:00,alert,paper,ADA/USDT [T],crypto_t,SELL,,0.225869,0.17729686262722472,2.2586899999999996,,score -0.13,
+2026-10-17T00:01:59+00:00,alert,paper,DOGE/USDT [T],crypto_t,SELL,,0.08095,0.06724803219348627,0.8094999999999999,,score -0.542,
+2026-10-17T00:02:03+00:00,alert,paper,LINK/USDT [T],crypto_t,SELL,,12.35095,10.135911976243516,123.50949999999999,,score -0.077,
+2026-10-17T00:02:08+00:00,alert,paper,AVAX/USDT [T],crypto_t,BUY,,9.965,7.897096201769301,99.65,,score 0.372,
+2026-10-17T00:02:08+00:00,trade,paper,ADA/USDT [T],crypto_t,sell,50.112306985243656,0.2257560655,,,-1.1981558991413426,señal,"{""resumen"":""Venta por señal con resultado -9.4% (Cripto tendencia)."",""pro"":[""El score cayó a -0.13, por debajo del umbral de salida"",""Salió antes de tocar el stop, con -9.4%""],""contra"":[],""ret"":-0.0936,""score"":-0.13}"
