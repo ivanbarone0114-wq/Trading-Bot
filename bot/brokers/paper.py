@@ -13,7 +13,7 @@ class PaperBroker:
             with open(self.path) as f:
                 self.s = json.load(f)
         else:
-            self.s = {"cash": dict(capital), "positions": {}}
+            self.s = {"cash": dict(capital), "positions": {}, "version": 3}
             self._save()
         for m, v in (capital or {}).items():  # mercados nuevos arrancan con su capital
             self.s["cash"].setdefault(m, float(v))
