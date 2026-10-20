@@ -3,11 +3,12 @@ mode: paper              # alerts | paper | live
 state_dir: state         # cartera simulada, bitácora y alertas
 
 capital:                 # capital asignado por mercado (en la moneda de cada mercado)
-  crypto_d: 100        # USDT, estrategia cripto diaria
-  crypto_t: 100        # USDT, estrategia cripto de tendencia
+  crypto_d: 1000       # USDT, estrategia cripto diaria
+  crypto_t: 1000       # USDT, estrategia cripto de tendencia
+  crypto_f: 1000       # USDT, estrategia cripto Fibonacci
   crypto: 100           # USDT
-  us: 100               # USD
-  byma: 150000          # ~100 USD al CCL
+  us: 1000              # USD
+  byma: 1500000         # ARS (~1.000 USD al CCL)
 
 watchlist:
   # --- Cripto (24 h): cada una se opera con las estrategias "tendencia" y "diario" ---
@@ -57,8 +58,8 @@ strategy:
   weights: {trend: 2.0, macd: 1.5, rsi: 1.0, patterns: 1.0, news: 0.75}
 
 risk:
-  risk_per_trade: 0.02       # 2% del capital en riesgo por operación
-  max_position_pct: 0.34     # máx. 20% del capital en un solo activo
+  risk_per_trade: 0.04       # 4% del capital en riesgo por operación
+  max_position_pct: 0.35     # máx. 35% del capital en un solo activo
   max_open_positions: 5
   max_daily_loss_pct: 0.03   # corta el día si pierde 3%
   fee: 0.006
@@ -118,16 +119,18 @@ fees:
   crypto: 0.001
   crypto_d: 0.001
   crypto_t: 0.001
+  crypto_f: 0.001
   us: 0.006
   byma: 0.006
 
 # Monto mínimo por compra (evita posiciones "polvo" que ocupan cupos)
 min_order:
-  crypto: 10
-  crypto_d: 10
-  crypto_t: 10
-  us: 10
-  byma: 10000
+  crypto: 20
+  crypto_d: 20
+  crypto_t: 20
+  crypto_f: 20
+  us: 20
+  byma: 20000
 
 # ============ CRIPTO: DOS ESTRATEGIAS EN PARALELO ============
 # Cada cripto de la watchlist se analiza con las dos, cada una con su capital (capital.crypto_d / crypto_t).
@@ -137,13 +140,36 @@ crypto_strategies:
     ema_fast: 20
     ema_slow: 50
     stop_atr: 3.0     # stop de emergencia, en ATR diarios
+    max_posiciones: 4 # cada posición es 1/4 del capital (más concentrado = más riesgo)
   diario:             # velas de 1 h; giro de MACD con tendencia diaria y de 4 h alcistas
     enabled: true
     reward_risk: 2.0  # objetivo = 2 veces la distancia al stop
     max_hold_h: 24    # cierre forzado a las 24 h
+  fibonacci:          # velas de 4 h; compra el rebote en la zona 50%-78,6% de un impulso alcista
+    enabled: true
+    pivote: 3         # velas a cada lado para marcar máximos y mínimos
+    impulso_atr: 3.0  # tamaño mínimo del impulso, en ATR
+    max_velas: 60     # cierre forzado a las 60 velas de 4 h (10 días)
 
 # ============ CALENDARIO (pestaña Terminal) ============
 # Eventos propios que querés ver en el calendario. Las reuniones de la Fed y los balances se cargan solos.
 # Ejemplo:
 #   - {fecha: 2026-11-13, evento: "INDEC publica la inflación de octubre"}
 calendario: []
+
+# ============ MÁS RIESGO ============
+# Riesgo propio de cada mercado (sobrescribe la sección risk).
+risk_overrides:
+  crypto_d: {risk_per_trade: 0.05, max_position_pct: 0.5, max_open_positions: 4}
+  crypto_f: {risk_per_trade: 0.05, max_position_pct: 0.5, max_open_positions: 4}
+
+# Escala del capital: la cartera existente se multiplica una sola vez por este factor
+# (100 → 1.000). No cambia los porcentajes; solo hace los montos más fáciles de leer.
+escala:
+  factor: 10
+
+# ============ RENTA FIJA (pestaña Terminal) ============
+# Para ver la tasa de una Lecap, cargá lo que paga al vencimiento (cada 100 de valor nominal).
+# Ejemplo:  S30N6: 132.5
+renta_fija:
+  pagos: {}
