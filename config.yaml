@@ -162,7 +162,7 @@ crypto_strategies:
 # con capital propio (capital.us_f / byma_f) para compararlo con la estrategia técnica.
 # Reglas iguales a las de cripto. Probalas con el comando fibtest antes de confiar.
 fibonacci_acciones:
-  enabled: true
+  enabled: false
   pivote: 3           # ruedas a cada lado para marcar máximos y mínimos
   impulso_atr: 3.0    # tamaño mínimo del impulso, en ATR diarios
   max_velas: 30       # cierre forzado a las 30 ruedas (unas 6 semanas)
