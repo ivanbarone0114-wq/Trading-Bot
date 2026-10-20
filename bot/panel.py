@@ -53,9 +53,25 @@ def sig_row(item, s, df, strat):
         tr, mac = trend[trend_of(d)], "↑" if d["macd_hist"] > 0 else "↓"
     except Exception:
         tr, mac = "—", "—"
+    chg = None
+    try:
+        c = df["close"]
+        step = (df.index[-1] - df.index[-2]).total_seconds() if len(df) > 1 else 86400
+        back = 24 if step < 20000 else 1  # velas de 1 h: 24 velas = 1 día
+        if len(c) > back:
+            chg = float(c.iloc[-1] / c.iloc[-1 - back] - 1)
+    except Exception:
+        pass
     return {"sym": s.symbol, "mkt": MKT[item["market"]], "action": s.action, "score": s.score, "price": s.price,
-            "rsi": s.rsi, "trend": tr, "macd": mac, "reasons": s.reasons,
+            "rsi": s.rsi, "trend": tr, "macd": mac, "reasons": s.reasons, "chg": chg,
             "tf": item.get("timeframe", ""), "at": datetime.now().strftime("%d/%m %H:%M")}
+
+
+def _term_view(cfg, t):
+    from .terminal import calendar
+    ago = lambda k: (datetime.now().timestamp() - t.get(f"{k}_ts", 0)) / 60 if t.get(f"{k}_ts") else None
+    return {"macro": t.get("macro") or {}, "global": t.get("global") or [], "news": t.get("news") or [],
+            "cal": calendar(cfg, t.get("earnings")), "age": {k: ago(k) for k in ("macro", "global", "news")}}
 
 
 def _detail(s):
@@ -65,7 +81,7 @@ def _detail(s):
         return None
 
 
-def write_panel(cfg, paper, journal, results, px_cache, last_px, offline=False, sig_rows=None):
+def write_panel(cfg, paper, journal, results, px_cache, last_px, offline=False, sig_rows=None, term=None):
     """results: lista de (item, sig, df). Escribe state/panel.html."""
     now = datetime.now()
     ccl_rows, ccl = implied_ccl(cfg, px_cache, offline)
@@ -153,6 +169,7 @@ def write_panel(cfg, paper, journal, results, px_cache, last_px, offline=False, 
         "positions": positions, "ops": ops[:300], "signals": sigs,
         "ccl_pairs": [{"via": n, "v": v, "note": note} for n, v, note in ccl_rows],
         "arb": arb_rows, "arb_ref": ref, "arb_ref_src": ref_src, "arb_thr": thr,
+        "term": _term_view(cfg, term or {}),
     }
     html = TEMPLATE.replace("__DATA__", json.dumps(data, ensure_ascii=False, default=str).replace("</", "<\\/"))
     out = os.path.join(cfg["state_dir"], "panel.html")
@@ -217,6 +234,21 @@ nav .in{display:flex;max-width:820px;margin:0 auto}
 nav button{flex:1;border:0;background:none;color:var(--muted);font:inherit;font-size:12px;font-weight:600;padding:11px 2px 13px;border-top:3px solid transparent;cursor:pointer}
 nav button[aria-selected=true]{color:var(--ink);border-top-color:var(--accent)}
 section{display:none} section.on{display:block}
+body.wide .wrap,body.wide nav .in{max-width:1480px}
+.tgrid{display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:900px){.tgrid{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1280px){.tgrid{grid-template-columns:repeat(3,1fr)} .tgrid .span2{grid-column:span 2}}
+.tgrid .card{margin:0;min-width:0} .grid2>*{min-width:0;overflow-wrap:anywhere}
+.tape{display:flex;gap:18px;overflow-x:auto;padding:10px 14px;margin-bottom:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;scrollbar-width:none}
+.tape::-webkit-scrollbar{display:none}
+.tape .tk{white-space:nowrap;font-size:13px} .tape .tk b{font-weight:700;margin-right:6px}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.big2{font-size:24px;font-weight:800;font-stretch:112%;line-height:1.1}
+.dense td,.dense th{padding:5px 6px;font-size:12.5px}
+.news li{padding:8px 0;border-top:1px solid var(--line);font-size:13.5px} .news li:first-child{border-top:0}
+.news a{color:var(--ink);text-decoration:none} .news a:hover{text-decoration:underline}
+.chip{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;border-radius:5px;background:var(--surface-2);color:var(--muted);margin-right:6px}
+.spark{vertical-align:middle}
 .empty{color:var(--muted);text-align:center;padding:18px 6px}
 .note{font-size:12px;color:var(--muted);margin-top:8px}
 </style></head><body>
@@ -242,6 +274,22 @@ section{display:none} section.on{display:block}
   <div class="seg" id="sigf"><button data-f="all" aria-pressed="true">Todos</button><button data-f="Cripto" aria-pressed="false">Cripto</button><button data-f="EE.UU." aria-pressed="false">EE.UU.</button><button data-f="BYMA" aria-pressed="false">BYMA</button></div>
   <div class="tbl"><table><thead><tr><th>Activo</th><th>Señal</th><th>Score</th><th>Precio</th><th>RSI</th><th>MACD</th><th>Tendencia</th><th>Velas · dato</th></tr></thead><tbody id="sigtb"></tbody></table></div></div></section>
 
+<section id="t-term">
+  <div class="tape" id="tape"></div>
+  <div class="tgrid">
+    <div class="card"><h2>Dólares</h2><div class="tbl"><table class="dense"><thead><tr><th>Tipo</th><th>Compra</th><th>Venta</th></tr></thead><tbody id="tDol"></tbody></table></div><p class="note" id="tDolN"></p></div>
+    <div class="card"><h2>Argentina</h2><div class="grid2" id="tAr"></div><div id="tInf" style="margin-top:10px"></div><p class="note" id="tArN"></p></div>
+    <div class="card"><h2>Calendario</h2><ul class="list" id="tCal"></ul><p class="note">Fed: fechas oficiales. Balances: Yahoo Finance. Podés sumar eventos propios en la sección calendario de config.yaml.</p></div>
+    <div class="card span2"><h2>Mercados globales</h2><div class="tbl"><table class="dense"><thead><tr><th>Activo</th><th>Último</th><th>Día</th><th>Semana</th><th>Mes</th><th>Tendencia 1 mes</th></tr></thead><tbody id="tGlo"></tbody></table></div></div>
+    <div class="card"><h2>Cripto</h2><div id="tCry"></div></div>
+    <div class="card span2"><h2>Watchlist: los 30 que más se movieron</h2>
+      <div class="seg" id="tWf"><button data-f="all" aria-pressed="true">Todos</button><button data-f="EE.UU." aria-pressed="false">EE.UU.</button><button data-f="BYMA" aria-pressed="false">BYMA</button><button data-f="cripto" aria-pressed="false">Cripto</button></div>
+      <div class="tbl"><table class="dense"><thead><tr><th>Activo</th><th>Precio</th><th>Día</th><th>Señal</th><th>RSI</th><th>Tendencia</th></tr></thead><tbody id="tWl"></tbody></table></div></div>
+    <div class="card"><h2>Noticias</h2><ul class="list news" id="tNews"></ul></div>
+  </div>
+  <p class="note" id="tAge" style="text-align:center"></p>
+</section>
+
 <section id="t-ccl">
   <div class="card"><h2>Dólar CCL implícito</h2><div class="grid" id="cclg"></div></div>
   <div class="card"><h2>CEDEARs vs CCL</h2><p class="sub" id="arbinfo"></p><ul class="list" id="arblist"></ul>
@@ -252,7 +300,7 @@ section{display:none} section.on{display:block}
 <nav><div class="in">
 <button data-t="t-res" aria-selected="true">Resumen</button><button data-t="t-pos" aria-selected="false">Posiciones</button>
 <button data-t="t-ops" aria-selected="false">Operaciones</button><button data-t="t-sig" aria-selected="false">Señales</button>
-<button data-t="t-ccl" aria-selected="false">CCL</button></div></nav>
+<button data-t="t-ccl" aria-selected="false">CCL</button><button data-t="t-term" aria-selected="false">Terminal</button></div></nav>
 <script>
 const D = __DATA__;
 const $ = s => document.querySelector(s);
@@ -266,6 +314,7 @@ const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
   document.querySelectorAll('nav button').forEach(x => x.setAttribute('aria-selected', x === b));
   document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id === b.dataset.t));
+  document.body.classList.toggle('wide', b.dataset.t === 't-term');
   window.scrollTo(0, 0);
 });
 $('#upd').textContent = 'Actualizado ' + D.updated;
@@ -356,4 +405,46 @@ $('#arblist').innerHTML = D.arb.length ? D.arb.slice().sort((a, b) => order[a.ki
    <div class="sub">CEDEAR $ ${nf(a.ars)} · acción US$ ${px(a.usd)} · ratio ${nf(a.ratio, 0)} · CCL implícito $ ${nf(a.ccl)}</div>
    <div style="margin-top:6px"><span class="tag ${a.kind}">${esc(a.read)}</span></div></li>`).join('')
   : '<li class="empty">No hay CEDEARs configurados. Agregá la sección cedears en config.yaml.</li>';
+
+// ---- terminal
+(() => {
+  const T = D.term || {}, M = T.macro || {};
+  const spark = (v) => { if (!v || v.length < 2) return ''; const lo = Math.min(...v), hi = Math.max(...v), w = 90, h = 22;
+    const pts = v.map((x, i) => `${(i / (v.length - 1) * w).toFixed(1)},${(h - (hi === lo ? h / 2 : (x - lo) / (hi - lo) * h)).toFixed(1)}`).join(' ');
+    const col = v[v.length - 1] >= v[0] ? css('--bull') : css('--bear');
+    return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline fill="none" stroke="${col}" stroke-width="1.5" points="${pts}"/></svg>`; };
+  const G = T.global || [];
+  $('#tape').innerHTML = G.length ? G.map(g => `<span class="tk"><b>${esc(g.nombre)}</b>${px(g.ultimo)} <span class="${cls(g.dia)}">${pc(g.dia, 2)}</span></span>`).join('')
+    + (M.dolares ? M.dolares.filter(d => ['MEP', 'CCL', 'Blue'].includes(d.nombre)).map(d => `<span class="tk"><b>Dólar ${d.nombre}</b>$ ${nf(d.venta)}</span>`).join('') : '')
+    : '<span class="tk">Los datos de mercado aparecen en el próximo ciclo del bot.</span>';
+  $('#tDol').innerHTML = (M.dolares || []).map(d => `<tr><td><b>${esc(d.nombre)}</b></td><td>${d.compra == null ? '—' : '$ ' + nf(d.compra)}</td><td>$ ${nf(d.venta)}</td></tr>`).join('') || '<tr><td colspan="3">Sin datos</td></tr>';
+  $('#tDolN').textContent = M.brecha_ccl != null ? `Brecha CCL contra oficial: ${pc(M.brecha_ccl, 1)}. Fuente: dolarapi.com.` : '';
+  const ar = [];
+  if (M.riesgo_pais) ar.push(['Riesgo país', `${nf(M.riesgo_pais.valor, 0)} pb`, M.riesgo_pais.fecha]);
+  if (M.inflacion) ar.push([`Inflación ${M.inflacion.mes}`, pc(M.inflacion.valor, 1).replace('+', ''), `Interanual ${pc(M.inflacion.interanual, 1).replace('+', '')}`]);
+  if (M.plazo_fijo) ar.push(['Plazo fijo 30 días', `TNA ${nf(M.plazo_fijo.promedio_tna * 100, 1)}%`, `Promedio de ${M.plazo_fijo.n} bancos · TEM ${nf(M.plazo_fijo.tem * 100, 2)}%`]);
+  if (M.tasa_real_mensual != null) ar.push(['Tasa real mensual', `<span class="${cls(M.tasa_real_mensual)}">${pc(M.tasa_real_mensual, 2)}</span>`, 'Plazo fijo contra última inflación']);
+  $('#tAr').innerHTML = ar.map(([k, v, s]) => `<div><div class="k">${k}</div><div class="big2">${v}</div><div class="sub">${esc(s || '')}</div></div>`).join('') || '<p class="empty">Sin datos</p>';
+  if (M.inflacion && M.inflacion.serie) { const mx = Math.max(...M.inflacion.serie.map(x => x.v));
+    $('#tInf').innerHTML = '<div class="k">Inflación mensual, últimos 12 meses</div><div style="display:flex;align-items:flex-end;gap:3px;height:48px;margin-top:6px">'
+      + M.inflacion.serie.map(x => `<div title="${x.m}: ${nf(x.v * 100, 1)}%" style="flex:1;height:${Math.max(4, x.v / mx * 100)}%;background:var(--accent);opacity:.75;border-radius:2px"></div>`).join('') + '</div>'; }
+  $('#tArN').textContent = 'Fuentes: argentinadatos.com (riesgo país, INDEC, BCRA). Lecaps y cauciones no tienen fuente gratuita confiable: miralas en Bull Market.';
+  const tipo = {fed: 'Fed', balance: 'Balance', propio: 'Propio'};
+  $('#tCal').innerHTML = (T.cal || []).map(e => { const dd = new Date(e.fecha + 'T12:00:00'); const days = Math.round((dd - new Date()) / 864e5);
+    return `<li><div class="row"><span><span class="chip">${tipo[e.tipo] || ''}</span>${esc(e.evento)}</span><span class="sub">${dd.toLocaleDateString('es-AR', {day: '2-digit', month: '2-digit'})}${days <= 0 ? ' · hoy' : ' · en ' + days + ' d'}</span></div></li>`; }).join('') || '<li class="empty">Sin eventos en los próximos 60 días.</li>';
+  $('#tGlo').innerHTML = G.map(g => `<tr><td><b>${esc(g.nombre)}</b></td><td>${px(g.ultimo)}</td><td class="${cls(g.dia)}">${pc(g.dia, 2)}</td><td class="${cls(g.semana)}">${pc(g.semana, 1)}</td><td class="${cls(g.mes)}">${pc(g.mes, 1)}</td><td>${spark(g.spark)}</td></tr>`).join('') || '<tr><td colspan="6">Sin datos</td></tr>';
+  const cm = D.markets.filter(m => m.key.startsWith('crypto'));
+  const cp = D.positions.filter(p => p.mkt.startsWith('Cripto'));
+  $('#tCry').innerHTML = cm.map(m => `<div class="row" style="margin-bottom:6px"><b>${m.name}</b><span class="${cls(m.ret)}">${pc(m.ret, 2)}</span></div>`).join('')
+    + '<div class="k" style="margin-top:8px">Posiciones abiertas</div>'
+    + (cp.length ? cp.map(p => `<div class="row sub"><span>${esc(p.sym)}</span><span class="${cls(p.ret)}">${pc(p.ret, 1)}</span></div>`).join('') : '<p class="sub">Ninguna</p>');
+  const drawW = f => { $('#tWl').innerHTML = D.signals.filter(s => f === 'all' || (f === 'cripto' ? s.mkt.startsWith('Cripto') : s.mkt === f))
+      .slice().sort((a, b) => Math.abs(b.chg || 0) - Math.abs(a.chg || 0)).slice(0, 30).map(s =>
+      `<tr><td><b>${esc(s.sym)}</b></td><td>${px(s.price)}</td><td class="${cls(s.chg)}">${pc(s.chg, 2)}</td><td><span class="tag ${s.action}">${s.action}</span></td><td>${nf(s.rsi, 0)}</td><td>${s.trend}</td></tr>`).join(''); };
+  document.querySelectorAll('#tWf button').forEach(b => b.onclick = () => { document.querySelectorAll('#tWf button').forEach(x => x.setAttribute('aria-pressed', x === b)); drawW(b.dataset.f); });
+  drawW('all');
+  $('#tNews').innerHTML = (T.news || []).map(n => `<li><span class="chip">${esc(n.tema)}</span><a href="${esc(n.link)}" target="_blank" rel="noopener">${esc(n.titulo)}</a><div class="sub">${esc(n.fuente || '')} ${esc(n.ts || '')}</div></li>`).join('') || '<li class="empty">Sin noticias por ahora.</li>';
+  const a = T.age || {}; const f = x => x == null ? '—' : x < 1 ? 'recién' : `hace ${Math.round(x)} min`;
+  $('#tAge').textContent = `Macro ${f(a.macro)} · Mercados ${f(a.global)} · Noticias ${f(a.news)}. Precios de Yahoo con demora de hasta 15-20 minutos.`;
+})();
 </script></body></html>"""

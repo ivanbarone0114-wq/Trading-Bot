@@ -293,8 +293,10 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False, ma
                 print(f"[{sym}] compra bloqueada: {reason}")
                 continue
             if not is_crypto(mkt):
-                base = base_symbol(sym)
-                if any(o != sym and base_symbol(o) == base and not is_crypto((b.s["positions"].get(o) or {}).get("market", ""))
+                same = {pr["local"]: pr["adr"] for pr in (cfg.get("ccl") or {}).get("pairs", [])}
+                und = lambda x: same.get(base_symbol(x), base_symbol(x))
+                base = und(sym)
+                if any(o != sym and und(o) == base and not is_crypto((b.s["positions"].get(o) or {}).get("market", ""))
                        for o in held_symbols(brokers)):
                     print(f"[{sym}] ya hay posición en el mismo activo por otro mercado; no se duplica")
                     continue
@@ -431,7 +433,14 @@ def refresh_panel(cfg, paper, j, results, px_cache, last_px, offline=False, reco
         if record:
             _, ccl = implied_ccl(cfg, dict(all_px), offline)
             record_equity(cfg["state_dir"], paper, all_last, ccl)
-        write_panel(cfg, paper, j, results, dict(all_px), all_last, offline, sig_rows=list(cache["sig"].values()))
+        term = None
+        try:
+            from . import terminal
+            held_us = [base_symbol(k) for k, p in paper.s["positions"].items() if p.get("market") == "us"]
+            term = terminal.update(cfg, held_us, offline)
+        except Exception as e:
+            print(f"[terminal] {type(e).__name__}: {e}")
+        write_panel(cfg, paper, j, results, dict(all_px), all_last, offline, sig_rows=list(cache["sig"].values()), term=term)
     except Exception as e:
         print(f"[panel] no se pudo generar: {e}")
 
