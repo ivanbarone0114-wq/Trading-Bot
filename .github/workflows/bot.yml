@@ -15,7 +15,7 @@ on:
       comando:
         description: "Qué ejecutar"
         type: choice
-        options: [auto, ciclo, cripto, resumen, reporte, informe, panel, noticias, ccl, cotizacion, cartera]
+        options: [auto, ciclo, cripto, resumen, reporte, informe, panel, noticias, ccl, cotizacion, cartera, fibtest]
         default: ciclo
       simbolo:
         description: "Símbolo para cotizacion (ej: GGAL.BA, NVDA, BTC) o días para informe (ej: 30)"
@@ -83,6 +83,7 @@ jobs:
             cartera)    python -m bot.main cartera ;;
             panel)      python -m bot.main panel ;;
             noticias)   python -m bot.main noticias ;;
+            fibtest)    python -m bot.main fibtest ;;
             cripto)
               if [ "$EVENTO" = "schedule" ]; then
                 python -m bot.main run --mode paper --solo-operaciones --mercados crypto
