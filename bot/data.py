@@ -21,7 +21,8 @@ def fetch_ohlcv(symbol, market, timeframe="1d", limit=500, offline=False):
     """Velas OHLCV. Dentro de una misma ejecución, los pedidos repetidos se sirven de memoria."""
     if offline or market == "synthetic":
         return synthetic_ohlcv(n=limit, seed=zlib.crc32(f"{symbol}{timeframe}".encode()))
-    base = "crypto" if str(market).startswith("crypto") else market
+    from .markets import base_market
+    base = base_market(market)
     key = (symbol, base, timeframe)
     hit = _MEMO.get(key)
     if hit is not None and len(hit) >= min(limit, len(hit)) and hit.attrs.get("limit", 0) >= limit:

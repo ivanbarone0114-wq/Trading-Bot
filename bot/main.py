@@ -28,7 +28,7 @@ from .explain import explain_entry, explain_exit, dumps
 from .panel import record_equity, write_panel
 from .strategy import prepare
 from .informe import build_report, equity_by_market, save_equity_snapshot
-from .markets import MKT, CUR, ACTIVE, CRYPTO_STRATS, is_crypto, base_market, label_for, base_symbol
+from .markets import MKT, CUR, ACTIVE, CRYPTO_STRATS, FIB_STOCKS, FIB_MARKETS, is_crypto, base_market, label_for, base_symbol
 from .crypto_strats import trend_signal, day_signal, fib_signal, fib_levels
 from . import movers
 
@@ -77,6 +77,9 @@ def analyze(item, cfg, offline):
             return trend_signal(label, d1, cs), d1, []
         h1 = fetch_ohlcv(item["symbol"], mkt, "1h", 500, offline)
         return day_signal(label, h1, d1, cs), h1, []
+    if mkt in FIB_STOCKS:  # misma descarga diaria que la estrategia técnica (se sirve de memoria)
+        d1 = fetch_ohlcv(item["symbol"], base_market(mkt), "1d", 500, offline)
+        return fib_signal(label_for(item["symbol"], mkt), d1, cfg, tf="1d", key="fibonacci_acciones"), d1, []
     df = fetch_ohlcv(item["symbol"], item["market"], item["timeframe"], 500, offline)
     df_htf = fetch_ohlcv(item["symbol"], item["market"], item["htf"], 200, offline) if item.get("htf") else None
     ns, titles = (None, [])
@@ -90,7 +93,8 @@ def analyze(item, cfg, offline):
 def get_brokers(cfg, mode, confirm_live):
     paper = PaperBroker(cfg["state_dir"], cfg["capital"], cfg["risk"]["fee"], cfg["risk"]["slippage"], cfg.get("fees"))
     if mode != "live":
-        return {"crypto": paper, "crypto_d": paper, "crypto_t": paper, "crypto_f": paper, "us": paper, "byma": paper}
+        return {"crypto": paper, "crypto_d": paper, "crypto_t": paper, "crypto_f": paper, "us": paper, "byma": paper,
+                "us_f": paper, "byma_f": paper}
     if not (cfg["live"]["enabled"] and confirm_live):
         sys.exit("Modo live bloqueado: requiere live.enabled: true en config Y el flag --confirm-live.")
     from .brokers.binance_live import BinanceBroker
@@ -98,7 +102,7 @@ def get_brokers(cfg, mode, confirm_live):
     bn = BinanceBroker(cfg["live"]["crypto_testnet"])
     return {"crypto": bn, "crypto_d": bn, "crypto_t": bn, "crypto_f": bn,
             "us": AlpacaBroker(cfg["live"]["alpaca_paper"]),
-            "byma": paper}  # BYMA sigue en paper hasta implementar broker local
+            "byma": paper, "us_f": paper, "byma_f": paper}  # BYMA y Fibonacci siguen en paper hasta implementar broker local
 
 
 def confirm(msg, cfg, mode):
@@ -148,6 +152,9 @@ def _all_items(cfg):
             if (c["symbol"], "byma") not in seen:
                 seen.add((c["symbol"], "byma"))
                 items.append({"symbol": c["symbol"], "market": "byma", "timeframe": "1d", "htf": "1wk"})
+    if (cfg.get("fibonacci_acciones") or {}).get("enabled", False):  # cada acción también con Fibonacci
+        items += [{**it, "market": it["market"] + "_f", "timeframe": "1d"} for it in list(items)
+                  if it["market"] in ("us", "byma")]
     return items
 
 
@@ -181,6 +188,7 @@ def market_open(market, now=None):
     from zoneinfo import ZoneInfo
     if is_crypto(market):
         return True
+    market = base_market(market)
     tz = ZoneInfo("America/Argentina/Buenos_Aires" if market == "byma" else "America/New_York")
     t = (now or datetime.now(ZoneInfo("UTC"))).astimezone(tz)
     if t.weekday() >= 5:
@@ -218,6 +226,7 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False, ma
     if mode == "paper" and brokers:
         migrate_crypto(cfg, brokers["crypto"], j, offline)
         migrate_scale(cfg, brokers["crypto"])
+        migrate_fib_stocks(cfg, brokers["crypto"])
 
     # 1) analizar todo
     for item in items_of(cfg, markets):
@@ -257,6 +266,16 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False, ma
                     if pos.get("target") and bar["high"] >= pos["target"]:
                         why, px = "objetivo", max(float(bar["open"]), pos["target"])
                         break
+            if not why and mkt in FIB_STOCKS and pos.get("opened"):
+                import pandas as pd
+                t0 = pd.Timestamp(pos["opened"])
+                if df.index.tz is None:
+                    t0 = t0.tz_convert(None)
+                else:
+                    t0 = t0.tz_convert(df.index.tz)
+                ruedas = int((df.index.normalize() > t0.normalize()).sum())
+                if ruedas >= int((cfg.get("fibonacci_acciones") or {}).get("max_velas", 30)):
+                    why, px = "tiempo", float(last["close"])
             if not why and mkt in ("crypto_d", "crypto_f") and pos.get("opened"):
                 import pandas as pd
                 held_h = (pd.Timestamp.now(tz="UTC") - pd.Timestamp(pos["opened"])).total_seconds() / 3600
@@ -274,7 +293,7 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False, ma
                 sold_qty = float(pos["qty"])  # se guarda antes: la venta modifica la posición
                 ops["sell"] += 1
                 try:
-                    detail = dumps(explain_exit(why, dict(pos), px, sig, None) if mkt not in CRYPTO_STRATS
+                    detail = dumps(explain_exit(why, dict(pos), px, sig, None) if mkt not in CRYPTO_STRATS + FIB_STOCKS
                                    else {**explain_exit(why, dict(pos), px, sig, None),
                                          "resumen": f"Venta por {why} con resultado {px / pos['avg'] - 1:+.1%} ({MKT[mkt]})."})
                 except Exception as e:
@@ -305,11 +324,13 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False, ma
                 same = {pr["local"]: pr["adr"] for pr in (cfg.get("ccl") or {}).get("pairs", [])}
                 und = lambda x: same.get(base_symbol(x), base_symbol(x))
                 base = und(sym)
+                fam = lambda m: m in FIB_STOCKS  # técnica y Fibonacci son carteras separadas
                 if any(o != sym and und(o) == base and not is_crypto((b.s["positions"].get(o) or {}).get("market", ""))
+                       and fam((b.s["positions"].get(o) or {}).get("market", "")) == fam(mkt)
                        for o in held_symbols(brokers)):
                     print(f"[{sym}] ya hay posición en el mismo activo por otro mercado; no se duplica")
                     continue
-            if mkt in ("crypto_d", "crypto_f") and hasattr(b, "s") and b.s.get("last_entry", {}).get(sym) == sig.bar_time:
+            if mkt in ("crypto_d", *FIB_MARKETS) and hasattr(b, "s") and b.s.get("last_entry", {}).get(sym) == sig.bar_time:
                 print(f"[{sym}] esta señal ya se operó; se espera una nueva")
                 continue
             if mkt == "crypto_t":  # peso igual para cada cripto
@@ -318,7 +339,7 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False, ma
                 qty = max(alloc / (sig.price * (1 + fee) * (1 + cfg["risk"]["slippage"])), 0.0)
             else:
                 qty = risk_for(cfg, mkt).size(mkt, sig.price, sig.stop, b.cash(mkt))
-            if mkt == "byma":
+            if base_market(mkt) == "byma":
                 qty = float(int(qty))  # en BYMA se compran acciones enteras
             min_val = float((cfg.get("min_order") or {}).get(mkt, 0))
             if qty <= 0 or qty * sig.price < min_val:
@@ -330,7 +351,7 @@ def cycle(cfg, mode, offline, confirm_live=False, summary=False, quiet=False, ma
                 except Exception as e:
                     print(f"[{sym}] compra no ejecutada: {e}")
                     continue
-                if mkt in ("crypto_d", "crypto_f") and hasattr(b, "s"):
+                if mkt in ("crypto_d", *FIB_MARKETS) and hasattr(b, "s"):
                     b.s.setdefault("last_entry", {})[sym] = sig.bar_time; b._save()
                 try:
                     st = strategy_for(cfg, mkt)
@@ -412,10 +433,10 @@ def migrate_scale(cfg, paper):
     if paper.s.get("version", 1) >= 3 or f == 1:
         return
     for m in list(paper.s["cash"]):
-        if m in ACTIVE and m != "crypto_f":
+        if m in ACTIVE and m not in FIB_MARKETS:
             paper.s["cash"][m] *= f
     for p in paper.s["positions"].values():
-        if p.get("market") in ACTIVE:
+        if p.get("market") in ACTIVE and p.get("market") not in FIB_MARKETS:
             p["qty"] *= f
     import csv
     path = os.path.join(cfg["state_dir"], "equity_intraday.csv")
@@ -437,6 +458,33 @@ def migrate_scale(cfg, paper):
     notify(f"📈 <b>Más riesgo en cartera</b>\nCapital simulado x{f:g} (los porcentajes no cambian) y riesgo por operación más alto. "
            "Arranca Cripto Fibonacci [F] con su propio capital. A partir de ahora los movimientos se van a ver más grandes, "
            "para arriba y para abajo.")
+
+
+def migrate_fib_stocks(cfg, paper):
+    """Una sola vez: suma el capital de Fibonacci en acciones a la curva histórica para que no salte."""
+    if paper.s.get("version", 1) >= 4:
+        return
+    import csv
+    cap = cfg["capital"]
+    us_f, byma_f = float(cap.get("us_f", 0)), float(cap.get("byma_f", 0))
+    path = os.path.join(cfg["state_dir"], "equity_intraday.csv")
+    if os.path.exists(path):
+        with open(path) as fh:
+            rows = list(csv.DictReader(fh))
+        for r in rows:
+            if r.get("us_f") or not r.get("total_usd"):
+                continue
+            ccl = float(r["ccl"]) if r.get("ccl") else 0
+            r["us_f"], r["byma_f"] = us_f, byma_f
+            r["total_usd"] = round(float(r["total_usd"]) + us_f + (byma_f / ccl if ccl else 0), 4)
+        with open(path, "w", newline="") as fh:
+            w = csv.DictWriter(fh, ["time", *ACTIVE, "ccl", "total_usd"], extrasaction="ignore", restval="")
+            w.writeheader(); w.writerows(rows)
+    paper.s["version"] = 4
+    paper._save()
+    if (cfg.get("fibonacci_acciones") or {}).get("enabled", False):
+        notify("📐 <b>Fibonacci en acciones</b>\nArrancan EE.UU. Fibonacci y BYMA Fibonacci [F], con capital propio, para "
+               "compararlas con la estrategia técnica. Usan velas diarias. Simulación: no es asesoramiento financiero.")
 
 
 def duel_lines(paper, j, last_px, cfg):
@@ -487,7 +535,7 @@ def refresh_panel(cfg, paper, j, results, px_cache, last_px, offline=False, reco
         term = None
         try:
             from . import terminal
-            held_us = [base_symbol(k) for k, p in paper.s["positions"].items() if p.get("market") == "us"]
+            held_us = [base_symbol(k) for k, p in paper.s["positions"].items() if p.get("market") in ("us", "us_f")]
             term = terminal.update(cfg, held_us, offline)
         except Exception as e:
             print(f"[terminal] {type(e).__name__}: {e}")
@@ -827,6 +875,7 @@ def main():
     sub.add_parser("cartera", help="cartera simulada con precios actuales")
     sub.add_parser("panel", help="regenera el panel web (state/panel.html)")
     sub.add_parser("noticias", help="subas y bajas del día en acciones, con titulares")
+    sub.add_parser("fibtest", help="prueba histórica de Fibonacci en acciones (Yahoo, desde 2015)")
     inf = sub.add_parser("informe", help="informe de análisis en Markdown con prompt para un chat de análisis")
     inf.add_argument("--dias", type=int, default=7)
 
@@ -886,6 +935,10 @@ def main():
         movers.send_digest(cfg, results, "pedido", a.offline)
     elif a.cmd == "panel":
         cmd_panel(cfg, a.offline)
+    elif a.cmd == "fibtest":
+        from . import fibtest
+        res = fibtest.run(cfg, a.offline)
+        notify(fibtest.text(res, cfg))
     elif a.cmd == "cartera":
         cmd_portfolio(cfg, a.offline)
     elif a.cmd == "resumen-dia":

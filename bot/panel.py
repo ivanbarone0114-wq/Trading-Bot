@@ -16,7 +16,8 @@ def record_equity(state_dir, paper, last_px, ccl):
     eq = dict(paper.s["cash"])
     for sym, p in paper.s["positions"].items():
         eq[p["market"]] = eq.get(p["market"], 0.0) + p["qty"] * last_px.get(sym, p["avg"])
-    total = sum(eq.get(m, 0) for m in ACTIVE if m != "byma") + (eq.get("byma", 0) / ccl if ccl else 0)
+    ars = ("byma", "byma_f")
+    total = sum(eq.get(m, 0) for m in ACTIVE if m not in ars) + (sum(eq.get(m, 0) for m in ars) / ccl if ccl else 0)
     path = os.path.join(state_dir, "equity_intraday.csv")
     rows = []
     if os.path.exists(path):
@@ -65,7 +66,7 @@ def sig_row(item, s, df, strat):
         pass
     fib = None
     try:
-        if step >= 20000 and item["market"] != "crypto_f":
+        if step >= 20000 and item["market"] not in ("crypto_f", "us_f", "byma_f"):
             fib = fib_levels(df)
     except Exception:
         pass
@@ -142,7 +143,7 @@ def write_panel(cfg, paper, journal, results, px_cache, last_px, offline=False, 
                         "n": st_m["n"] if st_m else 0, "win": st_m["win_rate"] if st_m else None,
                         "pf": st_m["pf"] if st_m else None,
                         "open": sum(1 for p in paper.s["positions"].values() if p["market"] == m)})
-    to_usd = lambda m, v: v / ccl if m == "byma" and ccl else (0 if m == "byma" else v)
+    to_usd = lambda m, v: v / ccl if CUR.get(m) == "ARS" and ccl else (0 if CUR.get(m) == "ARS" else v)
     total_usd = sum(to_usd(m["key"], m["equity"]) for m in markets)
     cap_usd = sum(to_usd(m["key"], m["capital"]) for m in markets)
     realized_usd = sum(to_usd(c["market"], c["pnl"]) for c in closed)
@@ -267,7 +268,9 @@ body.wide .wrap,body.wide nav .in{max-width:1480px}
   <div class="card"><div class="grid" id="kpis"></div></div>
   <div class="card"><h2>Duelo cripto: tendencia, diario y Fibonacci</h2><div class="grid" id="duel"></div>
     <div class="chart" style="margin-top:12px"><canvas id="cDuel"></canvas></div>
-    <p class="note">Las dos arrancan con el mismo capital. Tendencia opera poco y sostiene semanas; diario cierra en 24 h como máximo; Fibonacci compra retrocesos en velas de 4 h y cierra en 10 días como máximo. En la prueba con datos reales de BTC 2022-2026: tendencia ganó, diario perdió y Fibonacci ganó poco (1 de 144 variantes, puede ser azar).</p></div>
+    <p class="note">Las tres arrancan con el mismo capital. Tendencia opera poco y sostiene semanas; diario cierra en 24 h como máximo; Fibonacci compra retrocesos en velas de 4 h y cierra en 10 días como máximo. En la prueba con datos reales de BTC 2022-2026: tendencia ganó, diario perdió y Fibonacci ganó poco (1 de 144 variantes, puede ser azar).</p></div>
+  <div class="card" id="duelSt"><h2>Acciones: técnica contra Fibonacci</h2><div class="grid" id="duel2"></div>
+    <p class="note">Cada par arranca con el mismo capital y opera las mismas acciones. Fibonacci usa velas diarias: compra el rebote en la zona 50%-78,6% de un impulso alcista, con stop debajo del mínimo y objetivo en el máximo. Sus reglas salieron de la prueba con BTC; para acciones mirá el resultado del comando fibtest.</p></div>
   <div class="card"><h2>Curva de patrimonio</h2><div class="chart"><canvas id="cEq"></canvas></div><p class="note" id="eqnote"></p></div>
   <div class="card"><h2>Resultado por operación</h2><div class="chart"><canvas id="cHist"></canvas></div><p class="note">Cada barra cuenta operaciones cerradas en ese rango de resultado. Rojo: pérdidas. Azul: ganancias.</p></div>
   <div class="card"><h2>Por mercado</h2><ul class="list" id="mkts"></ul></div>
@@ -278,7 +281,7 @@ body.wide .wrap,body.wide nav .in{max-width:1480px}
 <section id="t-ops"><div class="card"><h2>Operaciones y por qué</h2><ul class="list" id="opslist"></ul></div></section>
 
 <section id="t-sig"><div class="card"><h2>Ranking de señales</h2>
-  <div class="seg" id="sigf"><button data-f="all" aria-pressed="true">Todos</button><button data-f="Cripto" aria-pressed="false">Cripto</button><button data-f="EE.UU." aria-pressed="false">EE.UU.</button><button data-f="BYMA" aria-pressed="false">BYMA</button></div>
+  <div class="seg" id="sigf"><button data-f="all" aria-pressed="true">Todos</button><button data-f="Cripto" aria-pressed="false">Cripto</button><button data-f="EE.UU." aria-pressed="false">EE.UU.</button><button data-f="BYMA" aria-pressed="false">BYMA</button><button data-f="Fibonacci" aria-pressed="false">Fibonacci</button></div>
   <div class="tbl"><table><thead><tr><th>Activo</th><th>Señal</th><th>Score</th><th>Precio</th><th>RSI</th><th>MACD</th><th>Tendencia</th><th>Velas · dato</th></tr></thead><tbody id="sigtb"></tbody></table></div></div></section>
 
 <section id="t-term">
@@ -347,6 +350,9 @@ $('#kpis').innerHTML = [
 ].map(([k, v]) => `<div><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
 $('#duel').innerHTML = D.markets.filter(m => m.key.startsWith('crypto')).map(m => `<div><div class="k">${m.name}</div>
   <div class="v ${cls(m.ret)}">${pc(m.ret, 2)}</div><div class="sub">${nf(m.equity)} USDT · ${m.open} abiertas · ${m.n} cerradas${m.win == null ? '' : ' · acierto ' + nf(m.win * 100, 0) + '%'}${m.pf == null ? '' : ' · PF ' + nf(m.pf)}</div></div>`).join('');
+const ord2 = ['us', 'us_f', 'byma', 'byma_f'], st2 = D.markets.filter(m => ord2.includes(m.key)).sort((a, b) => ord2.indexOf(a.key) - ord2.indexOf(b.key));
+$('#duel2').innerHTML = st2.map(m => `<div><div class="k">${m.name}</div>
+  <div class="v ${cls(m.ret)}">${pc(m.ret, 2)}</div><div class="sub">${nf(m.equity)} ${m.cur} · ${m.open} abiertas · ${m.n} cerradas${m.win == null ? '' : ' · acierto ' + nf(m.win * 100, 0) + '%'}${m.pf == null ? '' : ' · PF ' + nf(m.pf)}</div></div>`).join('');
 $('#mkts').innerHTML = D.markets.map(m => `<li><div class="row"><b>${m.name}</b><span class="${cls(m.ret)}">${pc(m.ret, 2)}</span></div>
   <div class="sub">Patrimonio ${nf(m.equity)} ${m.cur} · capital ${nf(m.capital, 0)} · efectivo ${nf(m.cash)} · invertido ${nf(m.invested * 100, 0)}%</div></li>`).join('');
 
@@ -403,7 +409,7 @@ $('#opslist').innerHTML = D.ops.length ? D.ops.map(o => `<li><div class="row"><s
   <details><summary>Justificación y refutación</summary>${why(o.detail)}</details></li>`).join('') : '<li class="empty">Todavía no hubo operaciones.</li>';
 
 // ---- señales
-const drawSig = f => { $('#sigtb').innerHTML = D.signals.filter(s => f === 'all' || s.mkt === f).map(s =>
+const drawSig = f => { $('#sigtb').innerHTML = D.signals.filter(s => f === 'all' || (f === 'Fibonacci' ? s.mkt.endsWith('Fibonacci') : s.mkt.startsWith(f))).map(s =>
   `<tr><td><b>${esc(s.sym)}</b></td><td><span class="tag ${s.action}">${s.action}</span></td><td class="${cls(s.score)}">${s.score > 0 ? '+' : ''}${nf(s.score)}</td>
    <td>${px(s.price)}</td><td>${nf(s.rsi, 0)}</td><td>${s.macd}</td><td>${s.trend}</td><td>${esc(s.tf || '')} · ${esc(s.at || '')}</td></tr>`).join(''); };
 document.querySelectorAll('#sigf button').forEach(b => b.onclick = () => {
@@ -453,7 +459,7 @@ $('#arblist').innerHTML = D.arb.length ? D.arb.slice().sort((a, b) => order[a.ki
   $('#tCry').innerHTML = cm.map(m => `<div class="row" style="margin-bottom:6px"><b>${m.name}</b><span class="${cls(m.ret)}">${pc(m.ret, 2)}</span></div>`).join('')
     + '<div class="k" style="margin-top:8px">Posiciones abiertas</div>'
     + (cp.length ? cp.map(p => `<div class="row sub"><span>${esc(p.sym)}</span><span class="${cls(p.ret)}">${pc(p.ret, 1)}</span></div>`).join('') : '<p class="sub">Ninguna</p>');
-  const drawW = f => { $('#tWl').innerHTML = D.signals.filter(s => f === 'all' || (f === 'cripto' ? s.mkt.startsWith('Cripto') : s.mkt === f))
+  const drawW = f => { $('#tWl').innerHTML = D.signals.filter(s => !/^(EE\.UU\.|BYMA) Fibonacci$/.test(s.mkt)).filter(s => f === 'all' || (f === 'cripto' ? s.mkt.startsWith('Cripto') : s.mkt === f))
       .slice().sort((a, b) => Math.abs(b.chg || 0) - Math.abs(a.chg || 0)).slice(0, 30).map(s =>
       `<tr><td><b>${esc(s.sym)}</b></td><td>${px(s.price)}</td><td class="${cls(s.chg)}">${pc(s.chg, 2)}</td><td><span class="tag ${s.action}">${s.action}</span></td><td>${nf(s.rsi, 0)}</td><td>${s.trend}</td></tr>`).join(''); };
   document.querySelectorAll('#tWf button').forEach(b => b.onclick = () => { document.querySelectorAll('#tWf button').forEach(x => x.setAttribute('aria-pressed', x === b)); drawW(b.dataset.f); });

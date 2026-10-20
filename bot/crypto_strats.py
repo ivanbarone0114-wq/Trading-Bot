@@ -160,12 +160,15 @@ def fib_levels(df, lookback=90):
             "zona": zone, "niveles": {f"{f * 100:.1f}".replace(".0", "").replace(".", ",") + "%": round(v, 6) for f, v in lv.items()}}
 
 
-def fib_signal(label, h4_full, cfg):
-    p = cfg.get("fibonacci", {})
+def fib_signal(label, h4_full, cfg, tf="4h", key="fibonacci"):
+    """Fibonacci: rebote en la zona 50%-78,6% de un impulso alcista. Cripto usa velas de 4 h; acciones, diarias."""
+    p = cfg.get(key, {})
     k, min_imp, max_hold = p.get("pivote", 3), p.get("impulso_atr", 3.0), p.get("max_velas", 60)
-    h4 = closed(h4_full, "4h")
+    tf_txt = "4 h" if tf == "4h" else "diario"
+    velas = "velas de 4 h" if tf == "4h" else "ruedas"
+    h4 = closed(h4_full, tf)
     if len(h4) < 80:
-        raise ValueError(f"pocas velas de 4 h ({len(h4)})")
+        raise ValueError(f"pocas velas ({tf}: {len(h4)})")
     S, a = _fib_state(h4, k, min_imp, max_hold)  # impulso vigente, ya validado contra la última vela cerrada
     last = h4.iloc[-1]; av = float(a[-1]) if len(a) else 0.0
     price, r = float(last["close"]), float(rsi(h4["close"]).iloc[-1])
@@ -181,15 +184,18 @@ def fib_signal(label, h4_full, cfg):
                  ("Cerró sobre el 61,8%", above)]
         pro += [n for n, ok in conds if ok]; contra += [f"Falta: {n}" for n, ok in conds if not ok]
         stop, target = S["L"] - 0.2 * av, S["H"]
+        if tf == "1d":  # acciones: se opera al precio actual (la vela de hoy todavía no cerró)
+            price = float(h4_full["close"].iloc[-1])
         if all(ok for _, ok in conds) and stop < price < target:
             action, score = "BUY", 1.0
-            contra.append("Variante elegida entre 144: el resultado en datos reales puede ser casualidad")
+            contra.append("Variante elegida entre 144: el resultado en datos reales puede ser casualidad" if tf == "4h" else
+                          "Reglas elegidas con datos de BTC: en acciones, mirá la prueba histórica (comando fibtest)")
     else:
         contra.append("Sin impulso alcista vigente para medir retrocesos")
     reasons = pro or contra[:1]
-    explain = {"resumen": (f"Fibonacci 4 h: {'compra en el rebote del retroceso' if action == 'BUY' else 'esperando retroceso a la zona'}"
+    explain = {"resumen": (f"Fibonacci {tf_txt}: {'compra en el rebote del retroceso' if action == 'BUY' else 'esperando retroceso a la zona'}"
                            + (f". Stop {stop:,.4f} (debajo del mínimo del impulso), objetivo {target:,.4f} (máximo del impulso), "
-                              f"cierre forzado a las {max_hold} velas de 4 h." if action == "BUY" else ".")),
+                              f"cierre forzado a las {max_hold} {velas}." if action == "BUY" else ".")),
                "pro": pro, "contra": contra, "score": score, "rsi": round(r, 1)}
     s = _sig(label, action, score, price, stop if stop else price - 2 * av, target if target else price * 1.05,
              r, av, reasons, h4.index[-1], {"trend": score}, explain)
