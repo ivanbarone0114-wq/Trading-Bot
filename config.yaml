@@ -9,6 +9,8 @@ capital:                 # capital asignado por mercado (en la moneda de cada me
   crypto: 100           # USDT
   us: 1000              # USD
   byma: 1500000         # ARS (~1.000 USD al CCL)
+  us_f: 1000            # USD, Fibonacci en acciones de EE.UU.
+  byma_f: 1500000       # ARS, Fibonacci en acciones de BYMA
 
 watchlist:
   # --- Cripto (24 h): cada una se opera con las estrategias "tendencia" y "diario" ---
@@ -122,6 +124,8 @@ fees:
   crypto_f: 0.001
   us: 0.006
   byma: 0.006
+  us_f: 0.006
+  byma_f: 0.006
 
 # Monto mínimo por compra (evita posiciones "polvo" que ocupan cupos)
 min_order:
@@ -131,6 +135,8 @@ min_order:
   crypto_f: 20
   us: 20
   byma: 20000
+  us_f: 20
+  byma_f: 20000
 
 # ============ CRIPTO: DOS ESTRATEGIAS EN PARALELO ============
 # Cada cripto de la watchlist se analiza con las dos, cada una con su capital (capital.crypto_d / crypto_t).
@@ -150,6 +156,16 @@ crypto_strategies:
     pivote: 3         # velas a cada lado para marcar máximos y mínimos
     impulso_atr: 3.0  # tamaño mínimo del impulso, en ATR
     max_velas: 60     # cierre forzado a las 60 velas de 4 h (10 días)
+
+# ============ FIBONACCI EN ACCIONES ============
+# Cada acción (EE.UU. y BYMA, incluidos CEDEARs) también se analiza con Fibonacci en velas diarias,
+# con capital propio (capital.us_f / byma_f) para compararlo con la estrategia técnica.
+# Reglas iguales a las de cripto. Probalas con el comando fibtest antes de confiar.
+fibonacci_acciones:
+  enabled: true
+  pivote: 3           # ruedas a cada lado para marcar máximos y mínimos
+  impulso_atr: 3.0    # tamaño mínimo del impulso, en ATR diarios
+  max_velas: 30       # cierre forzado a las 30 ruedas (unas 6 semanas)
 
 # ============ CALENDARIO (pestaña Terminal) ============
 # Eventos propios que querés ver en el calendario. Las reuniones de la Fed y los balances se cargan solos.
