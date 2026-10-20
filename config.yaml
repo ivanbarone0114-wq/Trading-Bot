@@ -141,3 +141,9 @@ crypto_strategies:
     enabled: true
     reward_risk: 2.0  # objetivo = 2 veces la distancia al stop
     max_hold_h: 24    # cierre forzado a las 24 h
+
+# ============ CALENDARIO (pestaña Terminal) ============
+# Eventos propios que querés ver en el calendario. Las reuniones de la Fed y los balances se cargan solos.
+# Ejemplo:
+#   - {fecha: 2026-11-13, evento: "INDEC publica la inflación de octubre"}
+calendario: []
