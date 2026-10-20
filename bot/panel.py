@@ -6,6 +6,7 @@ from .ccl import implied_ccl
 from .cedears import arbitrage
 from .informe import pair_trades, trade_stats
 from .strategy import prepare, trend_of
+from .crypto_strats import fib_levels
 
 from .markets import MKT, CUR, ACTIVE, CRYPTO_STRATS
 
@@ -62,15 +63,21 @@ def sig_row(item, s, df, strat):
             chg = float(c.iloc[-1] / c.iloc[-1 - back] - 1)
     except Exception:
         pass
+    fib = None
+    try:
+        if step >= 20000 and item["market"] != "crypto_f":
+            fib = fib_levels(df)
+    except Exception:
+        pass
     return {"sym": s.symbol, "mkt": MKT[item["market"]], "action": s.action, "score": s.score, "price": s.price,
-            "rsi": s.rsi, "trend": tr, "macd": mac, "reasons": s.reasons, "chg": chg,
+            "rsi": s.rsi, "trend": tr, "macd": mac, "reasons": s.reasons, "chg": chg, "fib": fib,
             "tf": item.get("timeframe", ""), "at": datetime.now().strftime("%d/%m %H:%M")}
 
 
 def _term_view(cfg, t):
     from .terminal import calendar
     ago = lambda k: (datetime.now().timestamp() - t.get(f"{k}_ts", 0)) / 60 if t.get(f"{k}_ts") else None
-    return {"macro": t.get("macro") or {}, "global": t.get("global") or [], "news": t.get("news") or [],
+    return {"macro": t.get("macro") or {}, "global": t.get("global") or [], "news": t.get("news") or [], "renta": t.get("renta") or {},
             "cal": calendar(cfg, t.get("earnings")), "age": {k: ago(k) for k in ("macro", "global", "news")}}
 
 
@@ -258,9 +265,9 @@ body.wide .wrap,body.wide nav .in{max-width:1480px}
 <section id="t-res" class="on">
   <div class="card hero"><div class="k">Patrimonio total (USD, BYMA al CCL)</div><div class="big" id="total"></div><div id="totsub" class="sub"></div></div>
   <div class="card"><div class="grid" id="kpis"></div></div>
-  <div class="card"><h2>Duelo cripto: tendencia contra diario</h2><div class="grid" id="duel"></div>
+  <div class="card"><h2>Duelo cripto: tendencia, diario y Fibonacci</h2><div class="grid" id="duel"></div>
     <div class="chart" style="margin-top:12px"><canvas id="cDuel"></canvas></div>
-    <p class="note">Las dos arrancan con el mismo capital. La de tendencia opera poco y sostiene semanas; la diaria cierra cada operación en 24 h como máximo. En la prueba con datos reales de BTC 2022-2026, la de tendencia ganó y la diaria perdió.</p></div>
+    <p class="note">Las dos arrancan con el mismo capital. Tendencia opera poco y sostiene semanas; diario cierra en 24 h como máximo; Fibonacci compra retrocesos en velas de 4 h y cierra en 10 días como máximo. En la prueba con datos reales de BTC 2022-2026: tendencia ganó, diario perdió y Fibonacci ganó poco (1 de 144 variantes, puede ser azar).</p></div>
   <div class="card"><h2>Curva de patrimonio</h2><div class="chart"><canvas id="cEq"></canvas></div><p class="note" id="eqnote"></p></div>
   <div class="card"><h2>Resultado por operación</h2><div class="chart"><canvas id="cHist"></canvas></div><p class="note">Cada barra cuenta operaciones cerradas en ese rango de resultado. Rojo: pérdidas. Azul: ganancias.</p></div>
   <div class="card"><h2>Por mercado</h2><ul class="list" id="mkts"></ul></div>
@@ -285,6 +292,13 @@ body.wide .wrap,body.wide nav .in{max-width:1480px}
     <div class="card span2"><h2>Watchlist: los 30 que más se movieron</h2>
       <div class="seg" id="tWf"><button data-f="all" aria-pressed="true">Todos</button><button data-f="EE.UU." aria-pressed="false">EE.UU.</button><button data-f="BYMA" aria-pressed="false">BYMA</button><button data-f="cripto" aria-pressed="false">Cripto</button></div>
       <div class="tbl"><table class="dense"><thead><tr><th>Activo</th><th>Precio</th><th>Día</th><th>Señal</th><th>RSI</th><th>Tendencia</th></tr></thead><tbody id="tWl"></tbody></table></div></div>
+    <div class="card span2"><h2>Letras del Tesoro</h2><div class="tbl"><table class="dense"><thead><tr><th>Letra</th><th>Tipo</th><th>Vence</th><th>Días</th><th>Precio</th><th>Día</th><th>TEM</th><th>TNA</th></tr></thead><tbody id="tLet"></tbody></table></div>
+      <p class="note">Para ver la tasa de una Lecap, cargá en config.yaml (renta_fija → pagos) el valor que paga al vencimiento, que figura en Bull Market o en el aviso de licitación. Fuente: data912.com, con unos 20 s de demora.</p></div>
+    <div class="card"><h2>Bonos soberanos</h2><div class="tbl"><table class="dense"><thead><tr><th>Bono</th><th>US$</th><th>Día</th><th>MEP implícito</th></tr></thead><tbody id="tSob"></tbody></table></div><p class="note" id="tSobN"></p></div>
+    <div class="card"><h2>ONs más operadas (en dólares)</h2><div class="tbl"><table class="dense"><thead><tr><th>ON</th><th>Precio</th><th>Día</th><th>Volumen</th></tr></thead><tbody id="tOns"></tbody></table></div>
+      <p class="note">Precio cada 100 de valor nominal. Antes de comprar, revisá emisor, vencimiento y tasa en Bull Market.</p></div>
+    <div class="card"><h2>Fibonacci</h2><p class="sub" style="margin-top:0">Retroceso del último tramo grande (90 velas diarias). Informativo: no es señal de compra.</p>
+      <div class="tbl"><table class="dense"><thead><tr><th>Activo</th><th>Tramo</th><th>Zona</th><th>61,8%</th></tr></thead><tbody id="tFib"></tbody></table></div></div>
     <div class="card"><h2>Noticias</h2><ul class="list news" id="tNews"></ul></div>
   </div>
   <p class="note" id="tAge" style="text-align:center"></p>
@@ -344,7 +358,8 @@ if (window.Chart) {
     const capOf = k => (D.markets.find(m => m.key === k) || {}).capital || 1;
     new Chart($('#cDuel'), {type: 'line', data: {labels: dpts.map(p => p.t.slice(5)), datasets: [
       {label: 'Tendencia', data: dpts.map(p => (p.crypto_t / capOf('crypto_t') - 1) * 100), borderColor: css('--accent'), pointRadius: 0, tension: .25, borderWidth: 2},
-      {label: 'Diario', data: dpts.map(p => (p.crypto_d / capOf('crypto_d') - 1) * 100), borderColor: css('--hold'), pointRadius: 0, tension: .25, borderWidth: 2}]},
+      {label: 'Diario', data: dpts.map(p => (p.crypto_d / capOf('crypto_d') - 1) * 100), borderColor: css('--hold'), pointRadius: 0, tension: .25, borderWidth: 2},
+      {label: 'Fibonacci', data: dpts.map(p => p.crypto_f == null ? null : (p.crypto_f / capOf('crypto_f') - 1) * 100), borderColor: css('--bull'), pointRadius: 0, tension: .25, borderWidth: 2, spanGaps: true}]},
       options: {maintainAspectRatio: false, plugins: {legend: {display: true}}, scales: {x: {grid, ticks: {maxTicksLimit: 6}}, y: {grid, ticks: {callback: v => v.toFixed(1) + '%'}}}}});
   } else { const w = $('#cDuel').parentElement; w.style.height = 'auto'; w.innerHTML = '<p class="empty">La comparación aparece después de algunos ciclos.</p>'; }
   if (D.curve.length > 1) {
@@ -443,6 +458,16 @@ $('#arblist').innerHTML = D.arb.length ? D.arb.slice().sort((a, b) => order[a.ki
       `<tr><td><b>${esc(s.sym)}</b></td><td>${px(s.price)}</td><td class="${cls(s.chg)}">${pc(s.chg, 2)}</td><td><span class="tag ${s.action}">${s.action}</span></td><td>${nf(s.rsi, 0)}</td><td>${s.trend}</td></tr>`).join(''); };
   document.querySelectorAll('#tWf button').forEach(b => b.onclick = () => { document.querySelectorAll('#tWf button').forEach(x => x.setAttribute('aria-pressed', x === b)); drawW(b.dataset.f); });
   drawW('all');
+  const RF = T.renta || {};
+  $('#tLet').innerHTML = (RF.letras || []).map(r => `<tr><td><b>${esc(r.symbol)}</b></td><td>${esc(r.tipo)}</td><td>${new Date(r.vto + 'T12:00:00').toLocaleDateString('es-AR', {day: '2-digit', month: '2-digit', year: '2-digit'})}</td>
+    <td>${r.dias}</td><td>${nf(r.precio, 3)}</td><td class="${cls(r.var)}">${pc(r.var, 2)}</td><td>${r.tem == null ? '—' : nf(r.tem * 100, 2) + '%'}</td><td>${r.tna == null ? '—' : nf(r.tna * 100, 1) + '%'}</td></tr>`).join('') || '<tr><td colspan="8">Sin datos</td></tr>';
+  $('#tSob').innerHTML = (RF.soberanos || []).map(r => `<tr><td><b>${esc(r.symbol)}</b></td><td>${nf(r.usd, 2)}</td><td class="${cls(r.var)}">${pc(r.var, 2)}</td><td>$ ${nf(r.mep, 2)}</td></tr>`).join('') || '<tr><td colspan="4">Sin datos</td></tr>';
+  $('#tSobN').textContent = RF.mep_al30 ? `MEP implícito con AL30: $ ${nf(RF.mep_al30, 2)} (precio en pesos ÷ precio en dólares).` : '';
+  $('#tOns').innerHTML = (RF.ons || []).map(r => `<tr><td><b>${esc(r.symbol)}</b></td><td>${nf(r.precio, 2)}</td><td class="${cls(r.var)}">${pc(r.var, 2)}</td><td>${nf(r.vol, 0)}</td></tr>`).join('') || '<tr><td colspan="4">Sin datos</td></tr>';
+  const fr = D.signals.filter(s => s.fib && !s.sym.endsWith('[D]'));
+  const ord = z => z.startsWith('zona dorada') ? 0 : z.startsWith('61,8') ? 1 : z.startsWith('38,2') ? 2 : 3;
+  $('#tFib').innerHTML = fr.sort((a, b) => ord(a.fib.zona) - ord(b.fib.zona)).slice(0, 25).map(s => `<tr><td><b>${esc(s.sym)}</b></td><td>${s.fib.tramo}</td>
+    <td>${s.fib.zona.startsWith('zona dorada') ? '<span class="tag BUY">' + esc(s.fib.zona) + '</span>' : esc(s.fib.zona)}</td><td>${px(s.fib.niveles['61,8%'])}</td></tr>`).join('') || '<tr><td colspan="4">Sin datos</td></tr>';
   $('#tNews').innerHTML = (T.news || []).map(n => `<li><span class="chip">${esc(n.tema)}</span><a href="${esc(n.link)}" target="_blank" rel="noopener">${esc(n.titulo)}</a><div class="sub">${esc(n.fuente || '')} ${esc(n.ts || '')}</div></li>`).join('') || '<li class="empty">Sin noticias por ahora.</li>';
   const a = T.age || {}; const f = x => x == null ? '—' : x < 1 ? 'recién' : `hace ${Math.round(x)} min`;
   $('#tAge').textContent = `Macro ${f(a.macro)} · Mercados ${f(a.global)} · Noticias ${f(a.news)}. Precios de Yahoo con demora de hasta 15-20 minutos.`;

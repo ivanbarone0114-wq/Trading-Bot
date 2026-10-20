@@ -112,3 +112,85 @@ def day_signal(label, h1_full, d_full, cfg):
     comp = {"trend": round(0.4 * conds[0][1] + 0.2 * conds[1][1], 3), "macd": round(0.2 * conds[2][1], 3)}
     return _sig(label, action, score, price, stop, target, float(r.iloc[-1]), av, reasons, h1.index[-1], comp, explain,
                 1 if conds[0][1] else -1)
+
+
+# ---------------------------------------------------------------------------
+# FIBONACCI (crypto_f): única variante, de 144 probadas, que ganó en 2022-2024 y en 2025-2026 con BTC
+# (velas de 4 h). Detecta un impulso alcista (mínimo → máximo de al menos 3 ATR, con pivotes de 3 velas a cada
+# lado), espera un retroceso: compra cuando una vela alcista toca la zona 50%-78,6% y cierra sobre el 61,8%.
+# Stop debajo del mínimo del impulso; objetivo en el máximo del impulso; cierre forzado a las 60 velas (10 días).
+#   2022-2024: +13%, acierto 67% | 2025-2026: +7%, acierto 67%. Es 1 de 144: puede ser azar.
+
+def _fib_state(h4, k=3, min_imp=3.0, max_hold=60):
+    """Recorre las velas cerradas y devuelve el impulso vigente (o None) al cierre de la última."""
+    o, h, l, c = (h4[x].values for x in ("open", "high", "low", "close"))
+    a = atr(h4).values
+    lastL, setup = None, None
+    for i in range(2 * k + 1, len(h4)):
+        j = i - k
+        if l[j] == l[j - k:j + k + 1].min():
+            lastL = (j, l[j])
+            if setup and setup["tL"] < j:
+                setup = None
+        if h[j] == h[j - k:j + k + 1].max() and lastL and lastL[0] < j and h[j] - lastL[1] >= min_imp * a[j]:
+            setup = {"L": lastL[1], "H": h[j], "tL": lastL[0], "tH": j, "age": 0}
+        if setup:
+            setup["age"] += 1
+            if h[i] > setup["H"] or l[i] < setup["L"] or setup["age"] > 4 * max_hold:
+                setup = None
+    return setup, a
+
+
+def fib_levels(df, lookback=90):
+    """Niveles de retroceso del último tramo grande (informativo, velas diarias)."""
+    d = df.tail(lookback)
+    if len(d) < 20:
+        return None
+    hi_t, lo_t = d["high"].idxmax(), d["low"].idxmin()
+    H, L = float(d["high"].max()), float(d["low"].min())
+    if H <= L:
+        return None
+    up = lo_t < hi_t  # el tramo fue de subida (mínimo antes que máximo)
+    lv = {f: (H - f * (H - L)) if up else (L + f * (H - L)) for f in (0.236, 0.382, 0.5, 0.618, 0.786)}
+    price = float(d["close"].iloc[-1])
+    ret = (H - price) / (H - L) if up else (price - L) / (H - L)
+    zone = ("sobre el 23,6%" if ret < 0.236 else "23,6%-38,2%" if ret < 0.382 else "38,2%-50%" if ret < 0.5
+            else "zona dorada 50%-61,8%" if ret < 0.618 else "61,8%-78,6%" if ret < 0.786 else "debajo del 78,6%")
+    return {"tramo": "subida" if up else "bajada", "H": H, "L": L, "precio": price, "retroceso": round(ret, 3),
+            "zona": zone, "niveles": {f"{f * 100:.1f}".replace(".0", "").replace(".", ",") + "%": round(v, 6) for f, v in lv.items()}}
+
+
+def fib_signal(label, h4_full, cfg):
+    p = cfg.get("fibonacci", {})
+    k, min_imp, max_hold = p.get("pivote", 3), p.get("impulso_atr", 3.0), p.get("max_velas", 60)
+    h4 = closed(h4_full, "4h")
+    if len(h4) < 80:
+        raise ValueError(f"pocas velas de 4 h ({len(h4)})")
+    S, a = _fib_state(h4, k, min_imp, max_hold)  # impulso vigente, ya validado contra la última vela cerrada
+    last = h4.iloc[-1]; av = float(a[-1]) if len(a) else 0.0
+    price, r = float(last["close"]), float(rsi(h4["close"]).iloc[-1])
+    pro, contra, action, stop, target, score = [], [], "HOLD", None, None, 0.0
+    if S:
+        R = S["H"] - S["L"]; lv = lambda f: S["H"] - f * R
+        ret = (S["H"] - price) / R
+        score = round(max(0.0, 1 - abs(ret - 0.618) * 2), 3)
+        in_zone = lv(0.786) <= last["low"] <= lv(0.5)
+        bull, above = last["close"] > last["open"], last["close"] > lv(0.618)
+        pro.append(f"Impulso alcista de {S['L']:,.4f} a {S['H']:,.4f}; retroceso actual {ret:.0%}")
+        conds = [("La vela tocó la zona 50%-78,6%", in_zone), ("Vela alcista (cierre sobre apertura)", bull),
+                 ("Cerró sobre el 61,8%", above)]
+        pro += [n for n, ok in conds if ok]; contra += [f"Falta: {n}" for n, ok in conds if not ok]
+        stop, target = S["L"] - 0.2 * av, S["H"]
+        if all(ok for _, ok in conds) and stop < price < target:
+            action, score = "BUY", 1.0
+            contra.append("Variante elegida entre 144: el resultado en datos reales puede ser casualidad")
+    else:
+        contra.append("Sin impulso alcista vigente para medir retrocesos")
+    reasons = pro or contra[:1]
+    explain = {"resumen": (f"Fibonacci 4 h: {'compra en el rebote del retroceso' if action == 'BUY' else 'esperando retroceso a la zona'}"
+                           + (f". Stop {stop:,.4f} (debajo del mínimo del impulso), objetivo {target:,.4f} (máximo del impulso), "
+                              f"cierre forzado a las {max_hold} velas de 4 h." if action == "BUY" else ".")),
+               "pro": pro, "contra": contra, "score": score, "rsi": round(r, 1)}
+    s = _sig(label, action, score, price, stop if stop else price - 2 * av, target if target else price * 1.05,
+             r, av, reasons, h4.index[-1], {"trend": score}, explain)
+    return s

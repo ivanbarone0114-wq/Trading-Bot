@@ -4,12 +4,12 @@ crypto_t = seguimiento de tendencia (velas diarias, operaciones de semanas)
 "crypto" es el mercado anterior; se mantiene solo para leer la bitácora vieja."""
 import re
 
-MKT = {"crypto_d": "Cripto diario", "crypto_t": "Cripto tendencia", "crypto": "Cripto (anterior)",
+MKT = {"crypto_d": "Cripto diario", "crypto_t": "Cripto tendencia", "crypto_f": "Cripto Fibonacci", "crypto": "Cripto (anterior)",
        "us": "EE.UU.", "byma": "BYMA"}
-CUR = {"crypto_d": "USDT", "crypto_t": "USDT", "crypto": "USDT", "us": "USD", "byma": "ARS"}
-ACTIVE = ("crypto_d", "crypto_t", "us", "byma")
-CRYPTO_STRATS = ("crypto_d", "crypto_t")
-SUFFIX = {"crypto_d": " [D]", "crypto_t": " [T]"}
+CUR = {"crypto_d": "USDT", "crypto_t": "USDT", "crypto_f": "USDT", "crypto": "USDT", "us": "USD", "byma": "ARS"}
+ACTIVE = ("crypto_d", "crypto_t", "crypto_f", "us", "byma")
+CRYPTO_STRATS = ("crypto_d", "crypto_t", "crypto_f")
+SUFFIX = {"crypto_d": " [D]", "crypto_t": " [T]", "crypto_f": " [F]"}
 
 
 def is_crypto(market):
@@ -27,5 +27,5 @@ def label_for(symbol, market):
 
 
 def base_symbol(label):
-    s = re.sub(r" \[[DT]\]$", "", label)
+    s = re.sub(r" \[[DTF]\]$", "", label)
     return s[:-3] if s.endswith(".BA") else s

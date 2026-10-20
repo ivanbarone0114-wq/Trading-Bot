@@ -7,7 +7,9 @@ from zoneinfo import ZoneInfo
 import requests
 
 AR = ZoneInfo("America/Argentina/Buenos_Aires")
-TTL = {"macro": 30 * 60, "global": 30 * 60, "news": 30 * 60, "earnings": 12 * 3600}
+TTL = {"macro": 30 * 60, "global": 30 * 60, "news": 30 * 60, "earnings": 12 * 3600, "renta": 30 * 60}
+MESES = {"E": 1, "F": 2, "M": 3, "A": 4, "Y": 5, "J": 6, "L": 7, "G": 8, "S": 9, "O": 10, "N": 11, "D": 12}
+SOBERANOS = ["AL30", "GD30", "AL35", "GD35", "AE38", "GD38", "AL41", "GD41", "GD46"]
 GLOBAL = [("S&P 500", "^GSPC"), ("Nasdaq 100", "^NDX"), ("Merval (ARS)", "^MERV"), ("Bitcoin", "BTC-USD"),
           ("Oro", "GC=F"), ("Petróleo WTI", "CL=F"), ("Dólar índice (DXY)", "DX-Y.NYB"), ("Tasa 10 años EE.UU.", "^TNX"),
           ("Real/dólar", "BRL=X"), ("Soja (CBOT)", "ZS=F")]
@@ -110,6 +112,65 @@ def _news(offline=False):
     return out
 
 
+def _vto_letra(sym):
+    """Fecha de vencimiento de una letra por su código (S30N6 = 30 de noviembre de 2026)."""
+    import re
+    m = re.fullmatch(r"[SXD](\d{1,2})([EFMAYJLGSOND])(\d)", sym)
+    if not m:
+        return None
+    try:
+        return date(2020 + int(m.group(3)), MESES[m.group(2)], int(m.group(1)))
+    except ValueError:
+        return None
+
+
+def _renta_fija(cfg):
+    """Letras, bonos soberanos y ONs desde data912.com (precios con unos 20 s de demora, sin garantía)."""
+    rf = cfg.get("renta_fija") or {}
+    pagos = {k.upper(): float(v) for k, v in (rf.get("pagos") or {}).items()}
+    out = {}
+    today = datetime.now(AR).date()
+    tipo = {"S": "Lecap (tasa fija)", "X": "CER (inflación)", "D": "Dólar linked"}
+    try:
+        letras = []
+        for x in _get("https://data912.com/live/arg_notes"):
+            vto = _vto_letra(x["symbol"])
+            if not vto or not x.get("c") or vto <= today:
+                continue
+            dias = (vto - today).days
+            row = {"symbol": x["symbol"], "tipo": tipo[x["symbol"][0]], "precio": x["c"], "var": (x.get("pct_change") or 0) / 100,
+                   "vol": x.get("v") or 0, "vto": str(vto), "dias": dias}
+            pago = pagos.get(x["symbol"])
+            if pago and x["symbol"][0] == "S":
+                tem = (pago / x["c"]) ** (30 / dias) - 1
+                row.update(tem=tem, tna=tem * 365 / 30, tea=(1 + tem) ** (365 / 30) - 1)
+            letras.append(row)
+        out["letras"] = sorted(letras, key=lambda r: r["dias"])
+    except Exception as e:
+        print(f"[terminal] letras: {type(e).__name__}")
+    try:
+        b = {x["symbol"]: x for x in _get("https://data912.com/live/arg_bonds")}
+        rows = []
+        for s in SOBERANOS:
+            ars, usd = b.get(s), b.get(s + "D")
+            if ars and usd and ars.get("c") and usd.get("c"):
+                rows.append({"symbol": s, "ars": ars["c"], "usd": usd["c"], "var": (usd.get("pct_change") or 0) / 100,
+                             "mep": ars["c"] / usd["c"], "vol": usd.get("v") or 0})
+        out["soberanos"] = rows
+        al = next((r for r in rows if r["symbol"] == "AL30"), None)
+        if al:
+            out["mep_al30"] = al["mep"]
+    except Exception as e:
+        print(f"[terminal] bonos: {type(e).__name__}")
+    try:
+        ons = [x for x in _get("https://data912.com/live/arg_corp") if x["symbol"].endswith("D") and x.get("c") and x.get("v")]
+        out["ons"] = [{"symbol": x["symbol"], "precio": x["c"], "var": (x.get("pct_change") or 0) / 100, "vol": x["v"]}
+                      for x in sorted(ons, key=lambda x: -x["v"])[:15]]
+    except Exception as e:
+        print(f"[terminal] ONs: {type(e).__name__}")
+    return out
+
+
 def _earnings(tickers, offline=False):
     if offline or not tickers:
         return []
@@ -140,7 +201,8 @@ def update(cfg, held_us, offline=False):
     now = time.time()
     us_watch = sorted({w["symbol"] for w in cfg.get("watchlist") or [] if w["market"] == "us"} | set(held_us))
     jobs = {"macro": lambda: {} if offline else _macro(), "global": lambda: _global(offline),
-            "news": lambda: _news(offline), "earnings": lambda: _earnings(us_watch, offline)}
+            "news": lambda: _news(offline), "earnings": lambda: _earnings(us_watch, offline),
+            "renta": lambda: {} if offline else _renta_fija(cfg)}
     for k, fn in jobs.items():
         if now - data.get(f"{k}_ts", 0) >= TTL[k]:
             val = fn()
