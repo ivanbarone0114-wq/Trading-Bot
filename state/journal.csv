@@ -643,3 +643,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-20T15:12:00+00:00,alert,paper,COME.BA,byma,SELL,,36.83000183105469,,,,score -0.5,
 2026-10-20T15:21:53+00:00,alert,paper,BA,us,SELL,,190.2100067138672,,,,score -0.409,
 2026-10-20T17:42:23+00:00,alert,paper,MSFT.BA,byma,BUY,,28960.0,27652.021519135724,31575.956961728552,,score 0.682,
+2026-10-20T19:01:44+00:00,alert,paper,MELI,us,BUY,,1875.2987060546875,1765.2805381963244,2095.3350417714137,,score 0.44,
