@@ -681,3 +681,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-21T14:22:18+00:00,alert,paper,MELI.BA,byma,BUY,,25440.0,23935.364225702957,28449.271548594086,,score 0.5,
 2026-10-21T14:42:04+00:00,alert,paper,VALO.BA,byma,SELL,,528.0,,,,score -0.636,
 2026-10-21T14:42:08+00:00,alert,paper,QQQ.BA,byma,BUY,,58800.0,56799.13151490435,62801.736970191305,,score 0.409,
+2026-10-21T15:02:05+00:00,alert,paper,SUPV,us,SELL,,7.21999979019165,,,,score -0.409,
