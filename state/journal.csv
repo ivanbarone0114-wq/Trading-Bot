@@ -668,3 +668,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-21T13:41:38+00:00,alert,paper,NFLX,us,SELL,,65.875,,,,score -0.636,
 2026-10-21T13:41:41+00:00,alert,paper,CVX,us,BUY,,225.09500122070312,216.50332511966005,242.27835342278928,,score 0.5,
 2026-10-21T13:41:45+00:00,alert,paper,PAM,us,SELL,,78.2300033569336,,,,score -0.636,
+2026-10-21T13:51:42+00:00,alert,paper,TSLA,us,BUY,,388.0299987792969,363.18412518912845,437.7217459596337,,score 0.636,
