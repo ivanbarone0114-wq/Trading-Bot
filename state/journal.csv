@@ -685,3 +685,13 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-21T15:22:11+00:00,alert,paper,AAPL.BA,byma,BUY,,28060.0,26933.285537137584,30313.42892572483,,score 0.5,
 2026-10-21T17:11:37+00:00,alert,paper,TGSU2.BA,byma,SELL,,8400.0,,,,score -0.36,
 2026-10-21T19:41:30+00:00,alert,paper,CEPU.BA,byma,SELL,,1986.0,,,,score -0.56,
+2026-10-22T00:00:28+00:00,alert,paper,BTC/USDT [T],crypto_t,BUY,,84090.9,77865.71459006566,840909.0,,score 0.332,
+2026-10-22T00:00:35+00:00,alert,paper,ETH/USDT [T],crypto_t,SELL,,2472.69,2192.2229437712012,24726.9,,score -0.05,
+2026-10-22T00:00:42+00:00,alert,paper,SOL/USDT [T],crypto_t,BUY,,106.94,92.86929919618098,1069.4,,score 0.015,
+2026-10-22T00:00:49+00:00,alert,paper,XRP/USDT [T],crypto_t,SELL,,1.36541,1.1789988679923984,13.6541,,score -0.052,
+2026-10-22T00:00:57+00:00,alert,paper,ADA/USDT [T],crypto_t,SELL,,0.225132,0.18247388508524703,2.2513199999999998,,score -0.101,
+2026-10-22T00:01:04+00:00,alert,paper,DOGE/USDT [T],crypto_t,SELL,,0.08195,0.06959029092954255,0.8194999999999999,,score -0.343,
+2026-10-22T00:01:11+00:00,alert,paper,LINK/USDT [T],crypto_t,BUY,,12.48686,10.446309616986015,124.8686,,score 0.047,
+2026-10-22T00:01:18+00:00,alert,paper,AVAX/USDT [T],crypto_t,BUY,,9.65,7.770291099706974,96.5,,score 0.078,
+2026-10-22T00:01:20+00:00,trade,paper,LINK/USDT [T],crypto_t,buy,19.991049553829697,12.49310343,10.446309616986015,124.8686,,score 0.047,"{""resumen"":""Tendencia diaria alcista: se compra y se mantiene mientras dure. Stop de emergencia en 10.45 (3 ATR diarios); sin objetivo fijo: sale cuando la tendencia se rompe."",""pro"":[""Precio 12.49 sobre la EMA50 diaria (12.41)"",""EMA20 (12.71) sobre EMA50: tendencia diaria alcista""],""contra"":[""Estrategia de baja frecuencia: acierta 25-40% de las veces y gana por pocas operaciones grandes""],""score"":0.047,""rsi"":46.7}"
+2026-10-22T00:01:26+00:00,trade,paper,SOL/USDT [T],crypto_t,buy,2.334256938766915,106.99346999999999,92.86929919618098,1069.4,,score 0.015,"{""resumen"":""Tendencia diaria alcista: se compra y se mantiene mientras dure. Stop de emergencia en 92.87 (3 ATR diarios); sin objetivo fijo: sale cuando la tendencia se rompe."",""pro"":[""Precio 106.94 sobre la EMA50 diaria (106.73)"",""EMA20 (108.63) sobre EMA50: tendencia diaria alcista""],""contra"":[""Estrategia de baja frecuencia: acierta 25-40% de las veces y gana por pocas operaciones grandes""],""score"":0.015,""rsi"":45.4}"
