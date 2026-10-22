@@ -727,3 +727,5 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-22T14:22:09+00:00,trade,paper,TSLA,us,buy,0.70213298132625,385.74777017211915,360.3200059826784,436.0249660619869,,score 0.636,"{""resumen"":""Compra con score +0.64: 2 argumentos a favor y 2 en contra. Riesgo definido con stop en 360.32 y objetivo en 436.02."",""pro"":[""Tendencia alcista (precio y EMA rápida sobre EMA lenta) (+0.36 al score)"",""Cruce alcista de MACD reciente (+0.27 al score)""],""contra"":[""Resistencia cercana en 388.86 (a menos de 1 ATR)"",""El objetivo (436.02) está por encima de la resistencia de 50 velas (388.86)""],""score"":0.636,""rsi"":59.2,""comp"":{""trend"":0.364,""rsi"":0.0,""macd"":0.273,""patterns"":0.0}}"
 2026-10-22T14:32:17+00:00,alert,paper,MELI.BA,byma,BUY,,25120.0,23624.674944275193,28110.65011144961,,score 0.5,
 2026-10-22T14:51:39+00:00,alert,paper,TGSU2.BA,byma,SELL,,8435.0,,,,score -0.36,
+2026-10-22T15:11:29+00:00,alert,paper,AAPL,us,BUY,,344.92999267578125,332.1954687117049,370.39904060393394,,score 0.5,
+2026-10-22T15:11:41+00:00,alert,paper,BBAR.BA,byma,SELL,,6710.0,,,,score -0.409,
