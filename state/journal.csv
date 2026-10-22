@@ -695,3 +695,13 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-22T00:01:18+00:00,alert,paper,AVAX/USDT [T],crypto_t,BUY,,9.65,7.770291099706974,96.5,,score 0.078,
 2026-10-22T00:01:20+00:00,trade,paper,LINK/USDT [T],crypto_t,buy,19.991049553829697,12.49310343,10.446309616986015,124.8686,,score 0.047,"{""resumen"":""Tendencia diaria alcista: se compra y se mantiene mientras dure. Stop de emergencia en 10.45 (3 ATR diarios); sin objetivo fijo: sale cuando la tendencia se rompe."",""pro"":[""Precio 12.49 sobre la EMA50 diaria (12.41)"",""EMA20 (12.71) sobre EMA50: tendencia diaria alcista""],""contra"":[""Estrategia de baja frecuencia: acierta 25-40% de las veces y gana por pocas operaciones grandes""],""score"":0.047,""rsi"":46.7}"
 2026-10-22T00:01:26+00:00,trade,paper,SOL/USDT [T],crypto_t,buy,2.334256938766915,106.99346999999999,92.86929919618098,1069.4,,score 0.015,"{""resumen"":""Tendencia diaria alcista: se compra y se mantiene mientras dure. Stop de emergencia en 92.87 (3 ATR diarios); sin objetivo fijo: sale cuando la tendencia se rompe."",""pro"":[""Precio 106.94 sobre la EMA50 diaria (106.73)"",""EMA20 (108.63) sobre EMA50: tendencia diaria alcista""],""contra"":[""Estrategia de baja frecuencia: acierta 25-40% de las veces y gana por pocas operaciones grandes""],""score"":0.015,""rsi"":45.4}"
+2026-10-22T13:31:33+00:00,alert,paper,VIST,us,BUY,,72.0250015258789,67.39402110493964,81.28696236775743,,score 0.453,
+2026-10-22T13:31:42+00:00,alert,paper,AMZN,us,BUY,,257.8016052246094,245.32873071255813,282.7473542487119,,score 0.5,
+2026-10-22T13:31:44+00:00,alert,paper,TSLA,us,BUY,,377.43499755859375,352.54136741543516,427.222257844911,,score 0.636,
+2026-10-22T13:31:44+00:00,alert,paper,AVGO,us,SELL,,327.20001220703125,,,,score -0.5,
+2026-10-22T13:31:46+00:00,alert,paper,NFLX,us,SELL,,66.75,,,,score -0.636,
+2026-10-22T13:31:48+00:00,alert,paper,PFE,us,BUY,,29.950000762939453,28.892635136302758,32.064732016212844,,score 0.5,
+2026-10-22T13:31:52+00:00,alert,paper,DIS,us,BUY,,111.93000030517578,108.06087397896358,119.66825295760016,,score 0.5,
+2026-10-22T13:31:53+00:00,alert,paper,CAT,us,SELL,,718.5499877929688,,,,score -0.5,
+2026-10-22T13:31:55+00:00,alert,paper,PAM,us,SELL,,76.93000030517578,,,,score -0.636,
+2026-10-22T13:31:55+00:00,alert,paper,CEPU,us,SELL,,12.0649995803833,,,,score -0.636,
