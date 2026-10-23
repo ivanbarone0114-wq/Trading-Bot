@@ -742,3 +742,13 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-23T00:01:32+00:00,trade,paper,SOL/USDT [T],crypto_t,sell,2.334256938766915,103.64815000000002,,,-8.300528085473758,señal,"{""resumen"":""Venta por señal con resultado -3.1% (Cripto tendencia)."",""pro"":[""El score cayó a -0.22, por debajo del umbral de salida"",""Salió antes de tocar el stop, con -3.1%""],""contra"":[],""ret"":-0.0308,""score"":-0.221}"
 2026-10-23T00:01:38+00:00,trade,paper,LINK/USDT [T],crypto_t,sell,19.991049553829697,11.95939731,,,-11.158176646110576,señal,"{""resumen"":""Venta por señal con resultado -4.2% (Cripto tendencia)."",""pro"":[""El score cayó a -0.28, por debajo del umbral de salida"",""Salió antes de tocar el stop, con -4.2%""],""contra"":[],""ret"":-0.0422,""score"":-0.278}"
 2026-10-23T00:01:44+00:00,trade,paper,AVAX/USDT [T],crypto_t,sell,12.042909930129964,9.112441500000001,,,-15.369428084149689,señal,"{""resumen"":""Venta por señal con resultado -12.1% (Cripto tendencia)."",""pro"":[""El score cayó a -0.36, por debajo del umbral de salida"",""Salió antes de tocar el stop, con -12.1%""],""contra"":[],""ret"":-0.1208,""score"":-0.356}"
+2026-10-23T13:32:38+00:00,alert,paper,VIST,us,BUY,,71.23999786376953,66.5123523181421,80.6952889550244,,score 0.44,
+2026-10-23T13:32:41+00:00,alert,paper,KO,us,BUY,,94.4800033569336,91.5925948716202,100.2548203275604,,score 0.452,
+2026-10-23T13:32:45+00:00,alert,paper,MELI,us,SELL,,1795.5,,,,score -0.56,
+2026-10-23T13:32:46+00:00,alert,paper,AAPL,us,BUY,,351.0799865722656,338.61323790441276,376.0134839079714,,score 0.636,
+2026-10-23T13:32:47+00:00,alert,paper,GOOGL,us,SELL,,321.6199951171875,,,,score -0.5,
+2026-10-23T13:32:49+00:00,alert,paper,AVGO,us,SELL,,322.9849853515625,,,,score -0.5,
+2026-10-23T13:32:50+00:00,alert,paper,NFLX,us,SELL,,67.12999725341797,,,,score -0.636,
+2026-10-23T13:32:54+00:00,alert,paper,PFE,us,BUY,,30.229999542236328,29.16203744110587,32.365923744497245,,score 0.5,
+2026-10-23T13:32:57+00:00,alert,paper,DIS,us,BUY,,112.0999984741211,108.10989119467716,120.08021303300895,,score 0.5,
+2026-10-23T13:33:01+00:00,alert,paper,SUPV,us,SELL,,7.199999809265137,,,,score -0.409,
