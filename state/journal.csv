@@ -836,3 +836,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-26T14:32:09+00:00,alert,paper,KO.BA,byma,BUY,,30840.0,25317.428580697633,41885.142838604734,,score 0.5,
 2026-10-26T15:02:04+00:00,alert,paper,EDN.BA,byma,SELL,,1491.0,,,,score -0.5,
 2026-10-26T15:02:06+00:00,alert,paper,MIRG.BA,byma,SELL,,1730.0,,,,score -0.409,
+2026-10-26T15:41:47+00:00,alert,paper,ALUA.BA,byma,SELL,,858.0,,,,score -0.372,
