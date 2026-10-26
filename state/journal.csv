@@ -819,3 +819,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-26T13:33:04+00:00,alert,paper,CEPU,us,SELL,,11.4399995803833,,,,score -0.636,
 2026-10-26T13:33:05+00:00,alert,paper,LOMA,us,SELL,,9.34000015258789,,,,score -0.636,
 2026-10-26T13:33:06+00:00,alert,paper,SUPV,us,SELL,,7.239999771118164,,,,score -0.409,
+2026-10-26T13:41:43+00:00,alert,paper,AAPL,us,BUY,,342.69000244140625,329.98056614103155,368.10887504215566,,score 0.636,
