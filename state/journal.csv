@@ -865,3 +865,6 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-27T13:33:11+00:00,alert,paper,PAM,us,SELL,,75.1001968383789,,,,score -0.5,
 2026-10-27T13:33:11+00:00,alert,paper,CEPU,us,SELL,,11.835000038146973,,,,score -0.5,
 2026-10-27T13:33:12+00:00,alert,paper,LOMA,us,SELL,,9.520000457763672,,,,score -0.5,
+2026-10-27T13:51:41+00:00,alert,paper,GGAL,us,SELL,,35.84000015258789,,,,score -0.36,
+2026-10-27T13:51:48+00:00,alert,paper,JNJ,us,BUY,,267.0899963378906,254.6540999992099,291.96178901525207,,score 0.5,
+2026-10-27T13:51:55+00:00,alert,paper,TGS,us,SELL,,26.149999618530273,,,,score -0.409,
