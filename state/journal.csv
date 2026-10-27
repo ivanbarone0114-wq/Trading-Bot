@@ -888,3 +888,5 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-27T15:01:49+00:00,alert,paper,CEPU.BA,byma,SELL,,1954.0,,,,score -0.457,
 2026-10-27T15:02:23+00:00,alert,paper,AAPL.BA,byma,BUY,,28720.0,27598.205054379523,30963.589891240958,,score 0.5,
 2026-10-27T15:02:24+00:00,alert,paper,MSFT.BA,byma,BUY,,29460.0,28094.979149135146,32190.041701729708,,score 0.636,
+2026-10-27T15:12:10+00:00,alert,paper,MIRG.BA,byma,SELL,,1735.0,,,,score -0.409,
+2026-10-27T15:12:12+00:00,alert,paper,AMZN.BA,byma,BUY,,2905.0,2749.998712972236,3215.002574055528,,score 0.5,
