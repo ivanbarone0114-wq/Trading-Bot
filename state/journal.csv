@@ -891,3 +891,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-27T15:12:10+00:00,alert,paper,MIRG.BA,byma,SELL,,1735.0,,,,score -0.409,
 2026-10-27T15:12:12+00:00,alert,paper,AMZN.BA,byma,BUY,,2905.0,2749.998712972236,3215.002574055528,,score 0.5,
 2026-10-27T15:52:03+00:00,alert,paper,TEO,us,SELL,,11.944999694824219,,,,score -0.636,
+2026-10-27T17:11:46+00:00,alert,paper,ALUA.BA,byma,SELL,,855.0,,,,score -0.371,
