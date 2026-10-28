@@ -922,3 +922,5 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-28T13:41:49+00:00,alert,paper,PAM,us,SELL,,75.5,,,,score -0.5,
 2026-10-28T13:41:50+00:00,alert,paper,CEPU,us,SELL,,11.449999809265137,,,,score -0.5,
 2026-10-28T13:41:52+00:00,alert,paper,TEO,us,SELL,,11.21399974822998,,,,score -0.636,
+2026-10-28T14:01:32+00:00,alert,paper,GGAL.BA,byma,SELL,,5835.0,,,,score -0.354,
+2026-10-28T14:01:44+00:00,alert,paper,KO,us,BUY,,91.66999816894531,88.5926306881575,97.82473313052094,,score 0.452,
