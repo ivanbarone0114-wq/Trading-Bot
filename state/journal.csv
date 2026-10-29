@@ -981,3 +981,5 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-29T14:22:36+00:00,alert,paper,AAPL.BA,byma,BUY,,28980.0,27834.166603010915,31271.666793978173,,score 0.5,
 2026-10-29T14:22:41+00:00,alert,paper,KO.BA,byma,BUY,,30580.0,29355.059045322203,33029.881909355594,,score 0.5,
 2026-10-29T14:22:42+00:00,alert,paper,SPY.BA,byma,BUY,,21280.0,20775.940547824484,22288.118904351028,,score 0.5,
+2026-10-29T14:31:59+00:00,alert,paper,CEPU.BA,byma,SELL,,1875.0,,,,score -0.457,
+2026-10-29T14:32:26+00:00,alert,paper,MELI.BA,byma,SELL,,22800.0,,,,score -0.5,
