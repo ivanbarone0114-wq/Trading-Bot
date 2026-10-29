@@ -972,3 +972,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-10-29T13:32:14+00:00,alert,paper,SUPV,us,SELL,,6.684999942779541,,,,score -0.636,
 2026-10-29T13:32:14+00:00,alert,paper,BBAR,us,SELL,,11.835000038146973,,,,score -0.636,
 2026-10-29T13:32:15+00:00,alert,paper,TEO,us,SELL,,11.069999694824219,,,,score -0.636,
+2026-10-29T13:42:07+00:00,alert,paper,PAM,us,SELL,,75.30000305175781,,,,score -0.5,
