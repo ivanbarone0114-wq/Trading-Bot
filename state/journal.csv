@@ -1107,3 +1107,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-11-02T14:42:09+00:00,alert,paper,META,us,SELL,,612.780029296875,,,,score -0.5,
 2026-11-02T14:42:15+00:00,alert,paper,DIS,us,BUY,,112.96499633789062,109.09545072826256,120.70408755714675,,score 0.636,
 2026-11-02T14:42:28+00:00,alert,paper,MELI.BA,byma,SELL,,22710.0,,,,score -0.5,
+2026-11-02T16:21:59+00:00,alert,paper,YPF,us,SELL,,45.349998474121094,,,,score -0.5,
