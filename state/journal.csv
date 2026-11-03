@@ -1155,3 +1155,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-11-03T15:04:35+00:00,alert,paper,WMT,us,BUY,,125.37999725341797,120.24711532099293,135.64576111826804,,score 0.5,
 2026-11-03T15:22:43+00:00,alert,paper,CRES.BA,byma,SELL,,1616.0,,,,score -0.5,
 2026-11-03T16:22:50+00:00,trade,paper,TXAR.BA,byma,sell,607.0,690.0765612901249,,,-46734.85545111273,stop,"{""resumen"":""Venta por stop con resultado -9.0%."",""pro"":[""Se respetó el stop: la pérdida quedó acotada en -9.0%""],""contra"":[],""ret"":-0.0896,""score"":-0.105}"
+2026-11-03T17:32:27+00:00,alert,paper,YPF,us,SELL,,44.09000015258789,,,,score -0.5,
