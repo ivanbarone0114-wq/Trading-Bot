@@ -1210,3 +1210,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-11-04T15:52:21+00:00,alert,paper,VIST,us,SELL,,64.13999938964844,,,,score -0.548,
 2026-11-04T15:52:51+00:00,alert,paper,AAPL.BA,byma,BUY,,29820.0,28339.60933852027,32780.78132295946,,score 0.5,
 2026-11-04T17:22:42+00:00,alert,paper,BYMA.BA,byma,SELL,,213.0,,,,score -0.5,
+2026-11-04T19:22:13+00:00,alert,paper,YPFD.BA,byma,SELL,,6990.0,,,,score -0.428,
