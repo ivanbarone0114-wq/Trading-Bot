@@ -1258,4 +1258,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-11-05T14:52:41+00:00,alert,paper,BMA,us,SELL,,58.244998931884766,,,,score -0.5,
 2026-11-05T15:03:04+00:00,alert,paper,COME.BA,byma,SELL,,32.79999923706055,,,,score -0.5,
 2026-11-05T15:12:14+00:00,alert,paper,YPFD.BA,byma,SELL,,6900.0,,,,score -0.434,
-2026-11-05T15:22:51+00:00,alert,paper,LOMA.BA,byma,SELL,,2965.0,,,,score -0.5,
+2026-11-05T15:25:15+00:00,alert,paper,LOMA.BA,byma,SELL,,2957.5,,,,score -0.5,
