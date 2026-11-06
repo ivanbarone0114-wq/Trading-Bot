@@ -1302,3 +1302,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-11-06T14:32:48+00:00,alert,paper,TECO2.BA,byma,SELL,,3442.5,,,,score -0.5,
 2026-11-06T14:52:45+00:00,alert,paper,SUPV,us,SELL,,5.84250020980835,,,,score -0.5,
 2026-11-06T14:52:48+00:00,alert,paper,CRES.BA,byma,SELL,,1510.0,,,,score -0.5,
+2026-11-06T15:02:40+00:00,alert,paper,PEP,us,BUY,,140.2198944091797,133.60370762165363,153.4522679842318,,score 0.5,
