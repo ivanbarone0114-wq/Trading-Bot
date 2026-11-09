@@ -1358,3 +1358,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-11-09T17:02:57+00:00,alert,paper,CEPU,us,SELL,,10.1899995803833,,,,score -0.5,
 2026-11-09T17:22:44+00:00,alert,paper,SUPV,us,SELL,,5.775000095367432,,,,score -0.5,
 2026-11-09T17:42:49+00:00,alert,paper,BA,us,SELL,,170.8000030517578,,,,score -0.682,
+2026-11-09T20:02:40+00:00,alert,paper,TGS,us,SELL,,21.92020034790039,,,,score -0.5,
