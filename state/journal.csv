@@ -1352,3 +1352,5 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-11-09T14:32:51+00:00,alert,paper,BMA,us,SELL,,57.8025016784668,,,,score -0.636,
 2026-11-09T14:43:02+00:00,alert,paper,LOMA,us,SELL,,8.779999732971191,,,,score -0.5,
 2026-11-09T14:43:04+00:00,alert,paper,BBAR,us,SELL,,10.859999656677246,,,,score -0.5,
+2026-11-09T14:52:36+00:00,alert,paper,GOOGL,us,SELL,,293.30499267578125,,,,score -0.5,
+2026-11-09T14:52:40+00:00,alert,paper,UNH,us,BUY,,396.8699951171875,373.3086900417393,443.992605268084,,score 0.409,
