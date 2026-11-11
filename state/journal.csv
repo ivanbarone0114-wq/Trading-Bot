@@ -1455,3 +1455,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-11-11T15:02:20+00:00,alert,paper,KO.BA,byma,BUY,,32160.0,30732.979552234636,35014.04089553073,,score 0.5,
 2026-11-11T15:21:54+00:00,alert,paper,SUPV,us,SELL,,5.875,,,,score -0.5,
 2026-11-11T15:31:27+00:00,alert,paper,GGAL.BA,byma,SELL,,5000.0,,,,score -0.458,
+2026-11-11T15:42:01+00:00,alert,paper,COME.BA,byma,SELL,,32.0,,,,score -0.5,
