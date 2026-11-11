@@ -1419,3 +1419,12 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-11-11T09:01:29+00:00,alert,paper,AVAX/USDT [T],crypto_t,SELL,,8.370450973510742,6.752491719106293,83.70450973510742,,score -0.564,
 2026-11-11T09:11:23+00:00,alert,paper,AVAX/USDT [T],crypto_t,SELL,,8.387,6.696897944211928,83.87,,score -0.558,
 2026-11-11T14:01:43+00:00,alert,paper,NVDA.BA,byma,SELL,,13040.0,,,,score -0.5,
+2026-11-11T14:21:33+00:00,alert,paper,ALUA.BA,byma,SELL,,774.5,,,,score -0.423,
+2026-11-11T14:21:34+00:00,alert,paper,CEPU.BA,byma,SELL,,1679.0,,,,score -0.457,
+2026-11-11T14:21:34+00:00,alert,paper,TGSU2.BA,byma,SELL,,7220.0,,,,score -0.44,
+2026-11-11T14:21:35+00:00,alert,paper,CRES.BA,byma,SELL,,1525.0,,,,score -0.5,
+2026-11-11T14:21:38+00:00,alert,paper,BBAR.BA,byma,SELL,,5915.0,,,,score -0.5,
+2026-11-11T14:21:44+00:00,alert,paper,MSFT.BA,byma,BUY,,29860.0,23630.046724665106,42319.90655066979,,score 0.5,
+2026-11-11T14:21:44+00:00,alert,paper,GOOGL.BA,byma,SELL,,8385.0,,,,score -0.5,
+2026-11-11T14:21:45+00:00,alert,paper,AMZN.BA,byma,BUY,,3167.5,2930.1017938639598,3642.2964122720805,,score 0.5,
+2026-11-11T14:21:48+00:00,trade,paper,AAPL.BA,byma,sell,13.0,27770.030995718796,,,-24270.961393321748,stop,"{""resumen"":""Venta por stop con resultado -5.2%."",""pro"":[""Se respetó el stop: la pérdida quedó acotada en -5.2%""],""contra"":[""La tendencia sigue alcista: el stop pudo saltar por ruido; un stop más amplio habría evitado la salida""],""ret"":-0.0516,""score"":0.227}"
