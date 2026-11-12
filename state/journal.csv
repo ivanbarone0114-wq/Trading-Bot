@@ -1492,3 +1492,8 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-11-12T14:32:34+00:00,alert,paper,SUPV,us,SELL,,5.650000095367432,,,,score -0.5,
 2026-11-12T14:32:37+00:00,alert,paper,CRES.BA,byma,SELL,,1506.0,,,,score -0.5,
 2026-11-12T14:32:41+00:00,alert,paper,TECO2.BA,byma,SELL,,3500.0,,,,score -0.5,
+2026-11-12T14:41:53+00:00,alert,paper,ALUA.BA,byma,SELL,,758.5,,,,score -0.44,
+2026-11-12T14:42:00+00:00,alert,paper,KO,us,BUY,,97.61000061035156,94.177331099604,104.47533963184667,,score 0.434,
+2026-11-12T14:42:22+00:00,alert,paper,BMA,us,SELL,,56.275001525878906,,,,score -0.5,
+2026-11-12T14:42:26+00:00,alert,paper,TEO,us,SELL,,10.295000076293945,,,,score -0.682,
+2026-11-12T14:42:28+00:00,alert,paper,LOMA.BA,byma,SELL,,2955.0,,,,score -0.5,
