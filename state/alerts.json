@@ -85,13 +85,14 @@
   "DOGE/USDT [F]": "DOGE/USDT [F]|2026-10-29 08:00:00+00:00|BUY",
   "PAMP.BA": "PAMP.BA|2026-11-02 00:00:00|SELL",
   "ARB:AMZN": "2026-11-12|cheap",
-  "ARB:MELI": "2026-11-05|rich",
-  "ARB:AAPL": "2026-11-04|cheap",
+  "ARB:MELI": "2026-11-12|rich",
+  "ARB:AAPL": "2026-11-12|rich",
   "AVAX/USDT [F]": "AVAX/USDT [F]|2026-11-10 20:00:00+00:00|BUY",
   "JPM": "JPM|2026-11-05 00:00:00|BUY",
-  "ARB:TSLA": "2026-11-12|cheap",
+  "ARB:TSLA": "2026-11-12|rich",
   "ARB:MSFT": "2026-11-12|cheap",
-  "ARB:GOOGL": "2026-11-12|cheap",
-  "ARB:NVDA": "2026-11-12|cheap",
-  "ARB:QQQ": "2026-11-12|cheap"
+  "ARB:GOOGL": "2026-11-12|rich",
+  "ARB:NVDA": "2026-11-12|rich",
+  "ARB:QQQ": "2026-11-12|cheap",
+  "ARB:KO": "2026-11-12|rich"
 }
