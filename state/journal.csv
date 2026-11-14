@@ -1550,3 +1550,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-11-14T00:01:35+00:00,alert,paper,DOGE/USDT [T],crypto_t,SELL,,0.06442,0.05377954952230439,0.6442000000000001,,score -1.0,
 2026-11-14T00:01:42+00:00,alert,paper,LINK/USDT [T],crypto_t,SELL,,9.82124,7.941597097187144,98.2124,,score -1.0,
 2026-11-14T00:01:49+00:00,alert,paper,AVAX/USDT [T],crypto_t,SELL,,8.229,6.5926681549962165,82.28999999999999,,score -0.637,
+2026-11-14T14:31:50+00:00,trade,paper,AVAX/USDT [F],crypto_f,sell,59.616072493144145,7.740999815993145,,,-39.72373180653676,stop,"{""resumen"":""Venta por stop con resultado -7.7% (Cripto Fibonacci)."",""pro"":[""Se respetó el stop: la pérdida quedó acotada en -7.7%""],""contra"":[],""ret"":-0.077,""score"":0.0}"
