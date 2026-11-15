@@ -1551,3 +1551,11 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-11-14T00:01:42+00:00,alert,paper,LINK/USDT [T],crypto_t,SELL,,9.82124,7.941597097187144,98.2124,,score -1.0,
 2026-11-14T00:01:49+00:00,alert,paper,AVAX/USDT [T],crypto_t,SELL,,8.229,6.5926681549962165,82.28999999999999,,score -0.637,
 2026-11-14T14:31:50+00:00,trade,paper,AVAX/USDT [F],crypto_f,sell,59.616072493144145,7.740999815993145,,,-39.72373180653676,stop,"{""resumen"":""Venta por stop con resultado -7.7% (Cripto Fibonacci)."",""pro"":[""Se respetó el stop: la pérdida quedó acotada en -7.7%""],""contra"":[],""ret"":-0.077,""score"":0.0}"
+2026-11-15T00:01:05+00:00,alert,paper,BTC/USDT [T],crypto_t,SELL,,64151.9,56330.85205824592,641519.0,,score -1.0,
+2026-11-15T00:01:12+00:00,alert,paper,ETH/USDT [T],crypto_t,SELL,,1770.45,1461.9826455012044,17704.5,,score -1.0,
+2026-11-15T00:01:19+00:00,alert,paper,SOL/USDT [T],crypto_t,SELL,,70.29,56.02240733494382,702.9000000000001,,score -1.0,
+2026-11-15T00:01:27+00:00,alert,paper,XRP/USDT [T],crypto_t,SELL,,0.91397,0.7277362274760395,9.1397,,score -1.0,
+2026-11-15T00:01:34+00:00,alert,paper,ADA/USDT [T],crypto_t,SELL,,0.147827,0.11173575998345955,1.4782699999999998,,score -1.0,
+2026-11-15T00:01:41+00:00,alert,paper,DOGE/USDT [T],crypto_t,SELL,,0.0573,0.04545230571543317,0.573,,score -1.0,
+2026-11-15T00:01:48+00:00,alert,paper,LINK/USDT [T],crypto_t,SELL,,8.87829,6.854010220810517,88.7829,,score -1.0,
+2026-11-15T00:01:55+00:00,alert,paper,AVAX/USDT [T],crypto_t,SELL,,7.097,5.298926540592285,70.97,,score -1.0,
