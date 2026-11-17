@@ -1633,3 +1633,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-11-17T15:31:49+00:00,alert,paper,AVGO,us,SELL,,337.3500061035156,,,,score -0.409,
 2026-11-17T15:51:40+00:00,alert,paper,GGAL.BA,byma,SELL,,4777.5,,,,score -0.446,
 2026-11-17T16:02:01+00:00,alert,paper,PAM,us,SELL,,62.724998474121094,,,,score -0.5,
+2026-11-17T17:11:36+00:00,alert,paper,UNH,us,BUY,,398.55499267578125,375.5785627456068,444.5078525361301,,score 0.409,
