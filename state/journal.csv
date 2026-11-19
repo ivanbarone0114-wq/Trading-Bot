@@ -1724,3 +1724,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-11-19T14:42:27+00:00,alert,paper,AAPL.BA,byma,BUY,,30100.0,28703.318428660452,32893.363142679096,,score 0.5,
 2026-11-19T14:52:07+00:00,alert,paper,YPFD.BA,byma,SELL,,6135.0,,,,score -0.446,
 2026-11-19T14:52:28+00:00,alert,paper,CEPU,us,SELL,,10.399499893188477,,,,score -0.409,
+2026-11-19T15:42:05+00:00,alert,paper,CEPU.BA,byma,SELL,,1750.0,,,,score -0.36,
