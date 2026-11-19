@@ -1710,3 +1710,12 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-11-19T14:22:09+00:00,alert,paper,MELI.BA,byma,SELL,,20430.0,,,,score -0.5,
 2026-11-19T14:22:10+00:00,trade,paper,AMZN.BA,byma,sell,146.0,3238.2719411797866,,,49308.21091677545,objetivo,"{""resumen"":""Venta por objetivo con resultado +13.1%."",""pro"":[""Se alcanzó el objetivo: +13.1%""],""contra"":[""La tendencia y el MACD siguen a favor: un stop dinámico (trailing) podría haber capturado más""],""ret"":0.1313,""score"":0.5}"
 2026-11-19T14:22:16+00:00,trade,paper,TSLA.BA,byma,buy,10.0,44662.32,41154.142316682526,51611.715366634955,,score 0.636,"{""resumen"":""Compra con score +0.64: 3 argumentos a favor y 2 en contra. Riesgo definido con stop en 41,154.14 y objetivo en 51,611.72."",""pro"":[""Tendencia alcista (precio y EMA rápida sobre EMA lenta) (+0.36 al score)"",""Cruce alcista de MACD reciente (+0.27 al score)"",""La temporalidad mayor también es alcista""],""contra"":[""Resistencia cercana en 45,780.00 (a menos de 1 ATR)"",""El objetivo (51,611.72) está por encima de la resistencia de 50 velas (45,780.00)""],""score"":0.636,""rsi"":58.9,""comp"":{""trend"":0.364,""rsi"":0.0,""macd"":0.273,""patterns"":0.0}}"
+2026-11-19T14:32:17+00:00,alert,paper,AAPL,us,BUY,,354.6828918457031,340.0452795183224,383.95811650046454,,score 0.5,
+2026-11-19T14:32:18+00:00,alert,paper,AMZN,us,BUY,,273.2298889160156,255.63365339548906,308.42235995706875,,score 0.5,
+2026-11-19T14:32:20+00:00,alert,paper,NFLX,us,SELL,,60.310001373291016,,,,score -0.636,
+2026-11-19T14:32:24+00:00,alert,paper,COST,us,BUY,,1089.0699462890625,1052.975935587062,1161.2579676930636,,score 0.5,
+2026-11-19T14:32:25+00:00,alert,paper,DIS,us,BUY,,122.09510040283203,116.58377330379194,133.1177546009122,,score 0.5,
+2026-11-19T14:32:26+00:00,alert,paper,BA,us,SELL,,163.9499969482422,,,,score -0.636,
+2026-11-19T14:32:27+00:00,alert,paper,PAM,us,SELL,,62.692501068115234,,,,score -0.5,
+2026-11-19T14:32:28+00:00,alert,paper,TGS,us,SELL,,20.565000534057617,,,,score -0.5,
+2026-11-19T14:32:29+00:00,alert,paper,SUPV,us,SELL,,5.380000114440918,,,,score -0.5,
