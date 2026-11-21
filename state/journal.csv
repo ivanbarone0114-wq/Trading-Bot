@@ -1767,3 +1767,11 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-11-20T17:32:51+00:00,trade,paper,AMZN,us,sell,0.8756427762146927,250.402798543889,,,-18.479672727646175,stop,"{""resumen"":""Venta por stop con resultado -6.7%."",""pro"":[""Se respetó el stop: la pérdida quedó acotada en -6.7%""],""contra"":[],""ret"":-0.0666,""score"":-0.136}"
 2026-11-20T17:32:58+00:00,trade,paper,AMZN.BA,byma,buy,168.0,3101.5499999999997,2862.0426322313087,3575.9147355373825,,score 0.5,"{""resumen"":""Compra con score +0.50: 3 argumentos a favor y 1 en contra. Riesgo definido con stop en 2,862.04 y objetivo en 3,575.91."",""pro"":[""Tendencia alcista (precio y EMA rápida sobre EMA lenta) (+0.36 al score)"",""Histograma MACD positivo (+0.14 al score)"",""La temporalidad mayor también es alcista""],""contra"":[""El objetivo (3,575.91) está por encima de la resistencia de 50 velas (3,255.00)""],""score"":0.5,""rsi"":57.9,""comp"":{""trend"":0.364,""rsi"":0.0,""macd"":0.136,""patterns"":0.0}}"
 2026-11-20T20:52:32+00:00,alert,paper,COST,us,BUY,,1102.6600341796875,1064.454966804088,1179.0701689308867,,score 0.5,
+2026-11-21T00:01:16+00:00,alert,paper,BTC/USDT [T],crypto_t,SELL,,58944.3,50559.04154771339,589443.0,,score -1.0,
+2026-11-21T00:01:23+00:00,alert,paper,ETH/USDT [T],crypto_t,SELL,,1622.97,1304.9925241410785,16229.7,,score -1.0,
+2026-11-21T00:01:30+00:00,alert,paper,SOL/USDT [T],crypto_t,SELL,,68.88,54.94959931916953,688.8,,score -1.0,
+2026-11-21T00:01:37+00:00,alert,paper,XRP/USDT [T],crypto_t,SELL,,0.91088,0.70701593796593,9.1088,,score -1.0,
+2026-11-21T00:01:44+00:00,alert,paper,ADA/USDT [T],crypto_t,SELL,,0.143212,0.1103042372147591,1.43212,,score -1.0,
+2026-11-21T00:01:51+00:00,alert,paper,DOGE/USDT [T],crypto_t,SELL,,0.05435,0.04309065360304546,0.5435,,score -1.0,
+2026-11-21T00:01:58+00:00,alert,paper,LINK/USDT [T],crypto_t,SELL,,8.5913,6.7201586149109485,85.91300000000001,,score -1.0,
+2026-11-21T00:02:05+00:00,alert,paper,AVAX/USDT [T],crypto_t,SELL,,6.541,4.931453333938929,65.41,,score -1.0,
