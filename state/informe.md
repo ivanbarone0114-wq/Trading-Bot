@@ -1,5 +1,5 @@
 # Informe del bot de trading (paper)
-Generado: 15/11/2026 23:38 (hora Argentina) | Período analizado: últimos 7 días (08/11 al 15/11)
+Generado: 23/11/2026 00:36 (hora Argentina) | Período analizado: últimos 7 días (16/11 al 23/11)
 
 ## 1. Resumen de rendimiento
 
@@ -8,8 +8,8 @@ Generado: 15/11/2026 23:38 (hora Argentina) | Período analizado: últimos 7 dí
 | Cripto diario | USDT | 1,000.00 | 1,000.00 | +0.00% | 0.00 | 0.00 | 1,000.00 | 0.0% |
 | Cripto tendencia | USDT | 1,000.00 | 918.33 | -8.17% | -52.53 | 0.00 | 918.33 | 0.0% |
 | Cripto Fibonacci | USDT | 1,000.00 | 898.10 | -10.19% | -101.90 | 0.00 | 898.10 | 0.0% |
-| EE.UU. | USD | 1,000.00 | 931.24 | -6.88% | -56.50 | 11.05 | 0.25 | 100.0% |
-| BYMA | ARS | 1,500,000.00 | 1,328,629.11 | -11.42% | -189,886.95 | 66,320.19 | 22,064.11 | 98.3% |
+| EE.UU. | USD | 1,000.00 | 834.34 | -16.57% | -132.10 | -11.99 | 218.27 | 73.8% |
+| BYMA | ARS | 1,500,000.00 | 1,322,352.55 | -11.84% | -108,514.92 | -20,720.45 | 1,502.55 | 99.9% |
 | EE.UU. Fibonacci | USD | 1,000.00 | 1,000.00 | +0.00% | 0.00 | 0.00 | 1,000.00 | 0.0% |
 | BYMA Fibonacci | ARS | 1,500,000.00 | 1,500,000.00 | +0.00% | 0.00 | 0.00 | 1,500,000.00 | 0.0% |
 
@@ -19,33 +19,37 @@ _El rendimiento total compara el patrimonio actual con el capital configurado. S
 
 | Índice | Últimos 7 días | Últimos 30 días |
 |---|---|---|
-| S&P 500 (SPY) | +2.59% | -1.98% |
-| Merval (ARS) | +0.74% | -5.94% |
-| Bitcoin | -13.36% | -19.93% |
+| S&P 500 (SPY) | -8.56% | -10.77% |
+| Merval (ARS) | — | — |
+| Bitcoin | -5.09% | -23.84% |
 
 ## 2. Estadísticas de operaciones cerradas
 
-**Últimos 7 días:** 2 operaciones | acierto 0% | ganancia prom. — | pérdida prom. -7.16% | expectativa -7.16% | profit factor 0.00 | duración prom. 4.8 días | cierres: stop 2
+**Últimos 7 días:** 6 operaciones | acierto 33% | ganancia prom. +9.31% | pérdida prom. -19.92% | expectativa -10.18% | profit factor 1,076.33 | duración prom. 19.6 días | cierres: objetivo 2, stop 4
 
-**Desde el inicio:** 64 operaciones | acierto 14% | ganancia prom. +1.03% | pérdida prom. -12.77% | expectativa -10.83% | profit factor 0.00 | duración prom. 4.1 días | cierres: cambio de estrategia 1, stop 40, residuo 2, objetivo 11, señal 10
+**Desde el inicio:** 70 operaciones | acierto 16% | ganancia prom. +2.54% | pérdida prom. -13.25% | expectativa -10.77% | profit factor 0.43 | duración prom. 5.5 días | cierres: residuo 2, señal 10, cambio de estrategia 1, stop 44, objetivo 13
 
 ## 3. Operaciones cerradas (últimos 7 días)
 
 | Activo | Mercado | Entrada | Precio entrada | Salida | Precio salida | Días | Resultado % | PnL | Motivo | Score de entrada |
 |---|---|---|---|---|---|---|---|---|---|---|
-| AAPL.BA | BYMA | 05/11 12:53 | 29,294.64 | 11/11 11:21 | 27,770.03 | 5.9 | -6.37% | -24,270.96 | stop | 0.455 |
-| AVAX/USDT [F] | Cripto Fibonacci | 10/11 21:02 | 8.39 | 14/11 11:31 | 7.74 | 3.6 | -7.94% | -39.72 | stop | 1.0 |
+| UNH | EE.UU. | 30/10 13:52 | 406.94 | 18/11 11:32 | 384.64 | 18.9 | -6.65% | -21.92 | stop | 0.5 |
+| AMZN.BA | BYMA | 03/11 11:22 | 2,863.93 | 19/11 11:22 | 3,238.27 | 16.0 | +11.79% | 49,308.21 | objetivo | 0.409 |
+| JNJ | EE.UU. | 05/11 11:43 | 278.37 | 19/11 12:52 | 264.84 | 14.0 | -6.03% | -15.08 | stop | 0.5 |
+| KO.BA | BYMA | 30/10 11:32 | 31,275.63 | 20/11 11:22 | 33,803.69 | 21.0 | +6.83% | 32,063.83 | objetivo | 0.5 |
+| MSFT | EE.UU. | 05/10 01:35 | 517.79 | 20/11 11:32 | 493.22 | 46.4 | -59.16% | -20.12 | stop | 0.636 |
+| AMZN | EE.UU. | 19/11 12:52 | 268.39 | 20/11 14:32 | 250.40 | 1.1 | -7.86% | -18.48 | stop | 0.5 |
 
 ## 4. Posiciones abiertas
 
 | Activo | Mercado | Cantidad | Precio entrada | Precio actual | Resultado % | Stop | Objetivo | Distancia al stop | % del mercado | Días abierta |
 |---|---|---|---|---|---|---|---|---|---|---|
-| MSFT | EE.UU. | 0.6570 | 517.79 | 523.88 | +1.18% | 494.37 | 563.86 | -5.63% | 37.0% | 41.9 |
-| KO.BA | BYMA | 15.0000 | 31,275.63 | 33,180.00 | +6.09% | 29,979.70 | 33,820.60 | -9.65% | 37.5% | 16.5 |
-| UNH | EE.UU. | 0.8105 | 406.94 | 407.46 | +0.13% | 384.83 | 450.54 | -5.55% | 35.5% | 16.4 |
-| AMZN.BA | BYMA | 146.0000 | 2,863.93 | 3,092.50 | +7.98% | 2,673.80 | 3,239.89 | -13.54% | 34.0% | 12.5 |
-| JNJ | EE.UU. | 0.8978 | 278.37 | 285.75 | +2.65% | 264.97 | 304.75 | -7.27% | 27.6% | 10.5 |
-| AAPL.BA | BYMA | 12.0000 | 29,414.70 | 29,780.00 | +1.24% | 27,797.70 | 32,604.61 | -6.66% | 26.9% | 4.5 |
+| AAPL.BA | BYMA | 12.0000 | 29,414.70 | 30,800.00 | +4.71% | 27,797.70 | 32,604.61 | -9.75% | 28.0% | 11.5 |
+| PEP | EE.UU. | 2.1761 | 141.53 | 140.54 | -0.70% | 134.98 | 154.42 | -3.95% | 36.7% | 4.5 |
+| SPY.BA | BYMA | 1.0000 | 20,910.45 | 20,890.00 | -0.10% | 20,132.91 | 22,434.17 | -3.62% | 1.6% | 4.4 |
+| TSLA.BA | BYMA | 10.0000 | 44,662.32 | 41,460.00 | -7.17% | 41,154.14 | 51,611.72 | -0.74% | 31.4% | 3.6 |
+| DIS | EE.UU. | 2.6296 | 121.72 | 117.98 | -3.07% | 116.05 | 132.88 | -1.64% | 37.2% | 2.5 |
+| AMZN.BA | BYMA | 168.0000 | 3,101.55 | 3,070.00 | -1.02% | 2,862.04 | 3,575.91 | -6.77% | 39.0% | 2.4 |
 
 ## 5. Evolución del patrimonio (cierre diario)
 
@@ -81,114 +85,119 @@ _El rendimiento total compara el patrimonio actual con el capital configurado. S
 | 2026-11-12 | 1000.0 | 918.325 | 920.9713 | 1284959.1066 | 1686.62 |
 | 2026-11-13 | 1000.0 | 918.325 | 926.7671 | 1315813.9425 | 1692.36 |
 | 2026-11-14 | 1000.0 | 918.325 | 931.2359 | 1318254.1066 | 1637.87 |
+| 2026-11-17 | 1000.0 | 918.325 | 928.1893 | 1328629.1066 | 1776.86 |
+| 2026-11-18 | 1000.0 | 918.325 | 898.9062 | 1313199.1066 | 1655.78 |
+| 2026-11-19 | 1000.0 | 918.325 | 887.8009 | 1321228.1939 | 1752.49 |
+| 2026-11-20 | 1000.0 | 918.325 | 855.4434 | 1350906.2319 | 1822.78 |
+| 2026-11-21 | 1000.0 | 918.325 | 834.3413 | 1341472.5519 | 1797.34 |
 
 ## 6. Señales actuales de todos los activos
 
-Analizados 94 activos: 9 BUY, 22 SELL, 63 HOLD.
+Analizados 94 activos: 2 BUY, 15 SELL, 77 HOLD.
 
 | Activo | Mercado | Señal | Score | Precio | Var. 30 días | RSI | MACD | Tendencia | Velas |
 |---|---|---|---|---|---|---|---|---|---|
-| AAPL | EE.UU. | BUY | +0.64 | 356.27 | +3.96% | 61 | ↑ | alcista | — |
-| AMZN | EE.UU. | BUY | +0.50 | 266.66 | +4.95% | 57 | ↑ | alcista | — |
-| JNJ | EE.UU. | BUY | +0.50 | 285.75 | +12.54% | 66 | ↑ | alcista | — |
-| PEP | EE.UU. | BUY | +0.50 | 145.44 | +12.51% | 66 | ↑ | alcista | — |
-| DIS | EE.UU. | BUY | +0.50 | 118.97 | +9.16% | 67 | ↑ | alcista | — |
-| AMZN.BA | BYMA | BUY | +0.50 | 3,092.50 | +8.41% | 62 | ↑ | alcista | doji |
-| AAPL.BA | BYMA | BUY | +0.46 | 29,780.00 | +7.28% | 66 | ↑ | alcista | estrella fugaz |
-| JPM | EE.UU. | BUY | +0.44 | 346.19 | +3.25% | 56 | ↑ | alcista | doji |
-| PFE | EE.UU. | BUY | +0.41 | 28.89 | +0.35% | 48 | ↓ | alcista | martillo,doji |
-| COST | EE.UU. | HOLD | +0.32 | 1,106.21 | +12.82% | 76 | ↑ | alcista | — |
-| KO.BA | BYMA | HOLD | +0.32 | 33,180.00 | +11.94% | 76 | ↑ | alcista | — |
-| KO | EE.UU. | HOLD | +0.30 | 99.25 | +8.14% | 74 | ↑ | alcista | — |
-| AVGO | EE.UU. | HOLD | +0.27 | 347.01 | +0.22% | 53 | ↑ | lateral | — |
-| TXAR.BA | BYMA | HOLD | +0.25 | 732.00 | +4.80% | 55 | ↓ | alcista | — |
-| MSFT | EE.UU. | HOLD | +0.23 | 523.88 | -1.84% | 49 | ↓ | alcista | — |
-| TSLA | EE.UU. | HOLD | +0.23 | 390.22 | +6.28% | 54 | ↓ | alcista | — |
-| UNH | EE.UU. | HOLD | +0.23 | 407.46 | +2.99% | 55 | ↓ | alcista | doji |
-| CVX | EE.UU. | HOLD | +0.23 | 219.89 | -0.97% | 52 | ↓ | alcista | — |
-| MSFT.BA | BYMA | HOLD | +0.23 | 29,280.00 | +2.02% | 53 | ↓ | alcista | — |
-| TSLA.BA | BYMA | HOLD | +0.23 | 43,660.00 | +10.48% | 56 | ↓ | alcista | — |
-| SPY.BA | BYMA | HOLD | +0.23 | 21,080.00 | +1.59% | 53 | ↓ | alcista | — |
-| XOM | EE.UU. | HOLD | +0.21 | 170.59 | -3.63% | 48 | ↓ | alcista | — |
-| BTC/USDT [D] | Cripto diario | HOLD | +0.10 | 64,554.90 | — | 43 | ↑ | bajista | — |
-| ETH/USDT [D] | Cripto diario | HOLD | +0.10 | 1,807.01 | — | 45 | ↑ | bajista | — |
-| SOL/USDT [D] | Cripto diario | HOLD | +0.10 | 71.39 | — | 45 | ↑ | bajista | — |
-| XRP/USDT [D] | Cripto diario | HOLD | +0.10 | 0.96 | — | 48 | ↑ | bajista | — |
-| ADA/USDT [D] | Cripto diario | HOLD | +0.10 | 0.15 | — | 43 | ↑ | bajista | — |
-| DOGE/USDT [D] | Cripto diario | HOLD | +0.10 | 0.06 | — | 45 | ↑ | bajista | — |
-| LINK/USDT [D] | Cripto diario | HOLD | +0.10 | 9.13 | — | 43 | ↑ | bajista | — |
-| AVAX/USDT [D] | Cripto diario | HOLD | +0.10 | 7.16 | — | 41 | ↑ | bajista | — |
-| META | EE.UU. | HOLD | +0.09 | 641.69 | -13.00% | 48 | ↑ | bajista | estrella manana |
-| V | EE.UU. | HOLD | +0.09 | 425.76 | +8.97% | 63 | ↓ | alcista | — |
-| MA | EE.UU. | HOLD | +0.09 | 661.19 | +9.61% | 64 | ↓ | alcista | — |
-| WMT | EE.UU. | HOLD | +0.09 | 128.09 | +10.27% | 68 | ↓ | alcista | — |
-| GLOB | EE.UU. | HOLD | +0.04 | 45.42 | +23.19% | 55 | ↓ | alcista | — |
-| BTC/USDT [F] | Cripto Fibonacci | HOLD | +0.00 | 65,358.00 | -20.02% | 34 | ↑ | bajista | — |
-| ETH/USDT [F] | Cripto Fibonacci | HOLD | +0.00 | 1,835.28 | -24.70% | 38 | ↑ | bajista | — |
-| SOL/USDT [F] | Cripto Fibonacci | HOLD | +0.00 | 72.81 | -31.00% | 37 | ↑ | bajista | — |
-| XRP/USDT [F] | Cripto Fibonacci | HOLD | +0.00 | 0.98 | -26.04% | 43 | ↑ | bajista | — |
-| ADA/USDT [F] | Cripto Fibonacci | HOLD | +0.00 | 0.16 | -31.46% | 38 | ↑ | bajista | — |
-| DOGE/USDT [F] | Cripto Fibonacci | HOLD | +0.00 | 0.06 | -26.16% | 39 | ↑ | bajista | — |
-| LINK/USDT [F] | Cripto Fibonacci | HOLD | +0.00 | 9.28 | -25.24% | 40 | ↑ | bajista | — |
-| AVAX/USDT [F] | Cripto Fibonacci | HOLD | +0.00 | 7.32 | -27.34% | 35 | ↓ | bajista | — |
-| AMD | EE.UU. | HOLD | -0.04 | 534.06 | -6.44% | 50 | ↑ | bajista | — |
-| BA | EE.UU. | HOLD | -0.04 | 171.50 | -7.13% | 38 | ↑ | bajista | martillo,doji |
-| GOOGL.BA | BYMA | HOLD | -0.04 | 8,555.00 | -11.94% | 43 | ↑ | bajista | — |
-| GOOGL | EE.UU. | HOLD | -0.09 | 295.77 | -14.92% | 41 | ↑ | bajista | — |
-| CAT | EE.UU. | HOLD | -0.09 | 600.20 | -19.67% | 36 | ↑ | bajista | — |
-| CEPU | EE.UU. | HOLD | -0.09 | 10.86 | -15.16% | 44 | ↑ | bajista | — |
-| TEO | EE.UU. | HOLD | -0.09 | 10.57 | -14.90% | 38 | ↑ | bajista | — |
-| VIST | EE.UU. | HOLD | -0.10 | 55.84 | -20.16% | 28 | ↓ | bajista | martillo |
-| YPFD.BA | BYMA | HOLD | -0.11 | 6,340.00 | -25.06% | 28 | ↓ | bajista | martillo,doji |
-| YPF | EE.UU. | HOLD | -0.14 | 37.90 | -27.46% | 25 | ↓ | bajista | martillo |
-| CRES.BA | BYMA | HOLD | -0.16 | 1,631.00 | -2.72% | 50 | ↓ | bajista | envolvente alcista |
-| META.BA | BYMA | HOLD | -0.18 | 44,800.00 | — | 100 | ↓ | lateral | — |
-| SPY | EE.UU. | HOLD | -0.22 | 754.37 | -1.98% | 47 | ↓ | bajista | — |
-| NFLX | EE.UU. | HOLD | -0.23 | 62.15 | -11.93% | 38 | ↑ | bajista | — |
-| VALO.BA | BYMA | HOLD | -0.23 | 524.50 | -0.94% | 48 | ↑ | bajista | doji |
-| MIRG.BA | BYMA | HOLD | -0.23 | 1,775.00 | +1.72% | 44 | ↑ | bajista | — |
-| PAMP.BA | BYMA | HOLD | -0.25 | 4,377.50 | -16.14% | 32 | ↓ | bajista | envolvente alcista |
-| QQQ.BA | BYMA | HOLD | -0.25 | 57,000.00 | -3.35% | 46 | ↓ | bajista | — |
-| GGAL.BA | BYMA | HOLD | -0.27 | 5,005.00 | -12.96% | 34 | ↓ | bajista | envolvente alcista |
-| COME.BA | BYMA | HOLD | -0.27 | 32.19 | -16.24% | 36 | ↑ | bajista | estrella fugaz |
-| NVDA | EE.UU. | HOLD | -0.28 | 162.85 | -26.41% | 25 | ↓ | bajista | — |
-| GGAL | EE.UU. | HOLD | -0.32 | 29.75 | -16.32% | 31 | ↓ | bajista | envolvente alcista |
-| PAM | EE.UU. | HOLD | -0.32 | 65.21 | -19.24% | 30 | ↓ | bajista | envolvente alcista |
-| TGNO4.BA | BYMA | HOLD | -0.32 | 2,552.50 | -20.11% | 30 | ↓ | bajista | martillo |
-| EDN.BA | BYMA | HOLD | -0.32 | 1,186.00 | -28.55% | 22 | ↓ | bajista | — |
-| SUPV.BA | BYMA | HOLD | -0.32 | 1,990.00 | -12.45% | 38 | ↓ | bajista | envolvente alcista |
-| BYMA.BA | BYMA | HOLD | -0.32 | 198.25 | -22.78% | 24 | ↓ | bajista | — |
-| TRAN.BA | BYMA | HOLD | -0.32 | 1,951.00 | -27.27% | 21 | ↓ | bajista | — |
-| NVDA.BA | BYMA | HOLD | -0.32 | 11,390.00 | -23.61% | 23 | ↓ | bajista | — |
-| CEPU.BA | BYMA | SELL | -0.39 | 1,809.00 | -12.01% | 47 | ↓ | bajista | — |
-| ALUA.BA | BYMA | SELL | -0.41 | 774.00 | -6.75% | 40 | ↓ | bajista | — |
-| MELI | EE.UU. | SELL | -0.43 | 1,491.49 | -18.90% | 34 | ↓ | bajista | — |
-| TGSU2.BA | BYMA | SELL | -0.44 | 7,190.00 | -14.35% | 33 | ↓ | bajista | — |
-| TGS | EE.UU. | SELL | -0.50 | 21.53 | -17.22% | 31 | ↓ | bajista | — |
-| LOMA | EE.UU. | SELL | -0.50 | 8.69 | -12.31% | 37 | ↓ | bajista | — |
-| SUPV | EE.UU. | SELL | -0.50 | 5.94 | -15.26% | 38 | ↓ | bajista | — |
-| BBAR | EE.UU. | SELL | -0.50 | 10.61 | -15.19% | 33 | ↓ | bajista | — |
-| LOMA.BA | BYMA | SELL | -0.50 | 2,897.50 | -9.88% | 37 | ↓ | bajista | — |
-| BBAR.BA | BYMA | SELL | -0.50 | 5,920.00 | -12.43% | 34 | ↓ | bajista | — |
-| TECO2.BA | BYMA | SELL | -0.50 | 3,532.50 | -12.07% | 40 | ↓ | bajista | doji |
-| MELI.BA | BYMA | SELL | -0.50 | 20,840.00 | -15.59% | 34 | ↓ | bajista | — |
-| BMA.BA | BYMA | SELL | -0.55 | 9,580.00 | -6.90% | 38 | ↓ | bajista | — |
-| BMA | EE.UU. | SELL | -0.64 | 56.86 | -10.86% | 35 | ↓ | bajista | — |
-| BTC/USDT [T] | Cripto tendencia | SELL | -1.00 | 65,358.00 | -19.93% | 24 | ↓ | bajista | — |
-| ETH/USDT [T] | Cripto tendencia | SELL | -1.00 | 1,835.28 | -23.89% | 26 | ↓ | bajista | — |
-| SOL/USDT [T] | Cripto tendencia | SELL | -1.00 | 72.81 | -29.95% | 21 | ↓ | bajista | — |
-| XRP/USDT [T] | Cripto tendencia | SELL | -1.00 | 0.98 | -25.16% | 27 | ↓ | bajista | — |
-| ADA/USDT [T] | Cripto tendencia | SELL | -1.00 | 0.16 | -29.67% | 28 | ↓ | bajista | — |
-| DOGE/USDT [T] | Cripto tendencia | SELL | -1.00 | 0.06 | -25.10% | 27 | ↓ | bajista | — |
-| LINK/USDT [T] | Cripto tendencia | SELL | -1.00 | 9.28 | -22.69% | 32 | ↓ | bajista | — |
-| AVAX/USDT [T] | Cripto tendencia | SELL | -1.00 | 7.32 | -25.65% | 34 | ↓ | bajista | — |
+| COST | EE.UU. | BUY | +0.50 | 1,102.15 | +10.56% | 70 | ↑ | alcista | doji |
+| AMZN.BA | BYMA | BUY | +0.50 | 3,070.00 | +3.11% | 56 | ↑ | alcista | doji |
+| AAPL.BA | BYMA | HOLD | +0.32 | 30,800.00 | +9.69% | 71 | ↑ | alcista | — |
+| KO.BA | BYMA | HOLD | +0.32 | 34,820.00 | +14.92% | 81 | ↑ | alcista | — |
+| V | EE.UU. | HOLD | +0.23 | 401.87 | -1.28% | 44 | ↓ | alcista | — |
+| MA | EE.UU. | HOLD | +0.23 | 625.59 | +0.48% | 46 | ↓ | alcista | — |
+| WMT | EE.UU. | HOLD | +0.23 | 127.95 | +8.62% | 64 | ↓ | alcista | — |
+| MSFT.BA | BYMA | HOLD | +0.23 | 28,920.00 | -0.28% | 51 | ↓ | alcista | — |
+| TSLA.BA | BYMA | HOLD | +0.23 | 41,460.00 | -1.52% | 48 | ↓ | alcista | — |
+| SPY.BA | BYMA | HOLD | +0.23 | 20,890.00 | -1.00% | 50 | ↓ | alcista | — |
+| BTC/USDT [D] | Cripto diario | HOLD | +0.20 | 60,618.30 | — | 50 | ↓ | alcista | — |
+| ETH/USDT [D] | Cripto diario | HOLD | +0.20 | 1,705.74 | — | 51 | ↓ | alcista | — |
+| SOL/USDT [D] | Cripto diario | HOLD | +0.20 | 70.29 | — | 51 | ↑ | alcista | — |
+| LINK/USDT [D] | Cripto diario | HOLD | +0.20 | 8.75 | — | 51 | ↓ | alcista | — |
+| XRP/USDT [D] | Cripto diario | HOLD | +0.10 | 0.92 | — | 42 | ↓ | lateral | — |
+| ADA/USDT [D] | Cripto diario | HOLD | +0.10 | 0.14 | — | 40 | ↓ | lateral | — |
+| DOGE/USDT [D] | Cripto diario | HOLD | +0.10 | 0.05 | — | 40 | ↓ | lateral | — |
+| AVAX/USDT [D] | Cripto diario | HOLD | +0.10 | 6.59 | — | 43 | ↓ | alcista | — |
+| ALUA.BA | BYMA | HOLD | +0.10 | 845.50 | +1.26% | 57 | ↑ | lateral | doji |
+| KO | EE.UU. | HOLD | +0.09 | 96.99 | +4.65% | 58 | ↓ | alcista | doji |
+| AAPL | EE.UU. | HOLD | +0.09 | 342.56 | -0.34% | 47 | ↓ | alcista | — |
+| JNJ | EE.UU. | HOLD | +0.09 | 270.47 | +4.92% | 48 | ↓ | alcista | doji |
+| PEP | EE.UU. | HOLD | +0.09 | 140.54 | +4.34% | 53 | ↓ | alcista | doji |
+| DIS | EE.UU. | HOLD | +0.09 | 117.98 | +5.50% | 56 | ↓ | alcista | — |
+| CVX | EE.UU. | HOLD | +0.04 | 208.37 | -7.35% | 42 | ↓ | lateral | envolvente alcista |
+| TXAR.BA | BYMA | HOLD | +0.01 | 702.50 | -8.41% | 49 | ↓ | alcista | envolvente bajista |
+| BTC/USDT [F] | Cripto Fibonacci | HOLD | +0.00 | 61,197.70 | -23.95% | 50 | ↑ | bajista | — |
+| ETH/USDT [F] | Cripto Fibonacci | HOLD | +0.00 | 1,723.52 | -26.99% | 51 | ↑ | bajista | — |
+| SOL/USDT [F] | Cripto Fibonacci | HOLD | +0.00 | 70.69 | -30.20% | 49 | ↑ | bajista | — |
+| XRP/USDT [F] | Cripto Fibonacci | HOLD | +0.00 | 0.93 | -27.38% | 47 | ↑ | bajista | — |
+| ADA/USDT [F] | Cripto Fibonacci | HOLD | +0.00 | 0.14 | -31.74% | 47 | ↑ | bajista | — |
+| DOGE/USDT [F] | Cripto Fibonacci | HOLD | +0.00 | 0.06 | -29.45% | 45 | ↑ | bajista | — |
+| LINK/USDT [F] | Cripto Fibonacci | HOLD | +0.00 | 8.81 | -24.99% | 51 | ↑ | bajista | — |
+| AVAX/USDT [F] | Cripto Fibonacci | HOLD | +0.00 | 6.68 | -26.15% | 46 | ↑ | bajista | — |
+| TEO | EE.UU. | HOLD | -0.04 | 9.58 | -26.53% | 30 | ↑ | bajista | — |
+| XOM | EE.UU. | HOLD | -0.06 | 159.99 | -9.60% | 37 | ↓ | lateral | — |
+| PAMP.BA | BYMA | HOLD | -0.07 | 4,360.00 | -14.51% | 39 | ↑ | bajista | doji |
+| MSFT | EE.UU. | HOLD | -0.07 | 484.52 | -8.91% | 35 | ↓ | lateral | — |
+| PFE | EE.UU. | HOLD | -0.07 | 27.40 | -6.87% | 34 | ↓ | lateral | — |
+| BYMA.BA | BYMA | HOLD | -0.09 | 200.25 | -16.56% | 38 | ↑ | bajista | — |
+| TRAN.BA | BYMA | HOLD | -0.09 | 2,059.00 | -14.74% | 40 | ↑ | bajista | — |
+| AMZN | EE.UU. | HOLD | -0.14 | 246.82 | -5.93% | 42 | ↓ | lateral | — |
+| TSLA | EE.UU. | HOLD | -0.14 | 345.82 | -10.52% | 38 | ↓ | lateral | — |
+| GLOB | EE.UU. | HOLD | -0.14 | 41.63 | -3.63% | 45 | ↓ | lateral | — |
+| CEPU.BA | BYMA | HOLD | -0.18 | 1,749.00 | -12.33% | 43 | ↑ | bajista | — |
+| META.BA | BYMA | HOLD | -0.18 | 42,100.00 | — | 100 | ↓ | lateral | doji |
+| AVGO | EE.UU. | HOLD | -0.23 | 304.41 | -9.88% | 41 | ↑ | bajista | — |
+| CEPU | EE.UU. | HOLD | -0.23 | 9.74 | -19.97% | 33 | ↑ | bajista | — |
+| TECO2.BA | BYMA | HOLD | -0.23 | 3,430.00 | -19.77% | 38 | ↑ | bajista | — |
+| VALO.BA | BYMA | HOLD | -0.23 | 514.00 | -2.10% | 42 | ↑ | bajista | — |
+| MIRG.BA | BYMA | HOLD | -0.23 | 1,695.00 | -2.87% | 40 | ↑ | bajista | doji |
+| GOOGL.BA | BYMA | HOLD | -0.23 | 8,220.00 | -13.11% | 39 | ↑ | bajista | doji |
+| QQQ.BA | BYMA | HOLD | -0.25 | 56,275.00 | -5.30% | 45 | ↓ | bajista | — |
+| YPFD.BA | BYMA | HOLD | -0.27 | 5,835.00 | -29.19% | 26 | ↓ | bajista | — |
+| MELI | EE.UU. | HOLD | -0.27 | 1,355.00 | -26.95% | 26 | ↓ | bajista | — |
+| VIST | EE.UU. | HOLD | -0.28 | 49.58 | -30.60% | 22 | ↓ | bajista | — |
+| NVDA | EE.UU. | HOLD | -0.28 | 125.53 | -43.45% | 15 | ↓ | bajista | — |
+| GGAL.BA | BYMA | HOLD | -0.30 | 4,557.50 | -24.23% | 28 | ↓ | bajista | — |
+| SPY | EE.UU. | HOLD | -0.30 | 689.81 | -10.77% | 25 | ↓ | bajista | — |
+| TGSU2.BA | BYMA | HOLD | -0.32 | 6,985.00 | -18.40% | 34 | ↓ | bajista | martillo,doji |
+| YPF | EE.UU. | HOLD | -0.32 | 32.32 | -35.83% | 19 | ↓ | bajista | — |
+| GGAL | EE.UU. | HOLD | -0.32 | 25.29 | -31.31% | 22 | ↓ | bajista | — |
+| AMD | EE.UU. | HOLD | -0.32 | 424.39 | -23.22% | 38 | ↓ | bajista | — |
+| NFLX | EE.UU. | HOLD | -0.32 | 56.73 | -12.78% | 27 | ↓ | bajista | — |
+| UNH | EE.UU. | HOLD | -0.32 | 339.85 | -18.50% | 30 | ↓ | bajista | doji |
+| BA | EE.UU. | HOLD | -0.32 | 155.89 | -18.93% | 25 | ↓ | bajista | — |
+| BMA | EE.UU. | HOLD | -0.32 | 49.86 | -22.49% | 25 | ↓ | bajista | — |
+| PAM | EE.UU. | HOLD | -0.32 | 60.63 | -22.19% | 27 | ↓ | bajista | — |
+| TGS | EE.UU. | HOLD | -0.32 | 19.23 | -26.27% | 24 | ↓ | bajista | — |
+| LOMA | EE.UU. | HOLD | -0.32 | 7.93 | -17.74% | 28 | ↓ | bajista | — |
+| SUPV | EE.UU. | HOLD | -0.32 | 4.51 | -38.81% | 22 | ↓ | bajista | — |
+| BBAR | EE.UU. | HOLD | -0.32 | 8.78 | -31.03% | 23 | ↓ | bajista | — |
+| CRES.BA | BYMA | HOLD | -0.32 | 1,413.00 | -14.71% | 33 | ↓ | bajista | martillo |
+| LOMA.BA | BYMA | HOLD | -0.32 | 2,842.50 | -9.83% | 41 | ↓ | bajista | martillo |
+| EDN.BA | BYMA | HOLD | -0.32 | 1,045.00 | -32.23% | 18 | ↓ | bajista | — |
+| SUPV.BA | BYMA | HOLD | -0.32 | 1,616.00 | -33.39% | 24 | ↓ | bajista | — |
+| BBAR.BA | BYMA | HOLD | -0.32 | 5,275.00 | -23.99% | 27 | ↓ | bajista | doji |
+| COME.BA | BYMA | HOLD | -0.32 | 27.39 | -27.13% | 23 | ↓ | bajista | — |
+| NVDA.BA | BYMA | HOLD | -0.32 | 9,530.00 | -37.01% | 16 | ↓ | bajista | — |
+| BMA.BA | BYMA | SELL | -0.44 | 8,990.00 | -14.62% | 33 | ↓ | bajista | doji |
+| JPM | EE.UU. | SELL | -0.45 | 310.53 | -7.36% | 31 | ↓ | bajista | — |
+| GOOGL | EE.UU. | SELL | -0.46 | 265.29 | -20.75% | 28 | ↓ | bajista | — |
+| CAT | EE.UU. | SELL | -0.46 | 510.45 | -30.88% | 24 | ↓ | bajista | — |
+| TGNO4.BA | BYMA | SELL | -0.50 | 2,407.00 | -19.02% | 31 | ↓ | bajista | — |
+| MELI.BA | BYMA | SELL | -0.50 | 20,240.00 | -19.94% | 35 | ↓ | bajista | — |
+| META | EE.UU. | SELL | -0.64 | 560.84 | -19.60% | 30 | ↓ | bajista | — |
+| BTC/USDT [T] | Cripto tendencia | SELL | -1.00 | 61,197.70 | -23.84% | 26 | ↓ | bajista | — |
+| ETH/USDT [T] | Cripto tendencia | SELL | -1.00 | 1,723.52 | -26.32% | 30 | ↓ | bajista | — |
+| SOL/USDT [T] | Cripto tendencia | SELL | -1.00 | 70.69 | -30.06% | 28 | ↑ | bajista | — |
+| XRP/USDT [T] | Cripto tendencia | SELL | -1.00 | 0.93 | -27.94% | 29 | ↑ | bajista | — |
+| ADA/USDT [T] | Cripto tendencia | SELL | -1.00 | 0.14 | -30.64% | 27 | ↓ | bajista | — |
+| DOGE/USDT [T] | Cripto tendencia | SELL | -1.00 | 0.06 | -28.46% | 26 | ↓ | bajista | — |
+| LINK/USDT [T] | Cripto tendencia | SELL | -1.00 | 8.81 | -23.60% | 33 | ↓ | bajista | — |
+| AVAX/USDT [T] | Cripto tendencia | SELL | -1.00 | 6.68 | -25.65% | 32 | ↓ | bajista | — |
 
 ## 7. Dólar CCL implícito
 
 | Vía | CCL |
 |---|---|
-| GGAL | 1,682.35 |
-| YPFD | 1,672.82 |
+| GGAL | 1,802.10 |
+| YPFD | 1,805.38 |
 
 ## 8. Configuración de la estrategia
 
