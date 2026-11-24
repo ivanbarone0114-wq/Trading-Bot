@@ -1855,3 +1855,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-11-24T15:02:07+00:00,alert,paper,DIS,us,BUY,,122.03500366210938,116.04664724854622,134.01171648923568,,score 0.5,
 2026-11-24T15:22:22+00:00,alert,paper,CRES.BA,byma,SELL,,1484.0,,,,score -0.5,
 2026-11-24T15:32:22+00:00,alert,paper,BBAR,us,SELL,,9.220000267028809,,,,score -0.5,
+2026-11-24T16:12:10+00:00,alert,paper,CAT,us,SELL,,530.4600219726562,,,,score -0.5,
