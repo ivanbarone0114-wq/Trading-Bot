@@ -1950,3 +1950,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-11-27T15:42:16+00:00,alert,paper,TEO,us,SELL,,10.510000228881836,,,,score -0.409,
 2026-11-27T16:21:57+00:00,alert,paper,TXAR.BA,byma,BUY,,722.5,645.5656086851839,876.3687826296322,,score 0.56,
 2026-11-27T17:12:27+00:00,alert,paper,MIRG.BA,byma,SELL,,1735.0,,,,score -0.409,
+2026-11-27T17:52:14+00:00,alert,paper,COST,us,BUY,,1100.8900146484375,1064.3129493526226,1174.0441452400673,,score 0.455,
