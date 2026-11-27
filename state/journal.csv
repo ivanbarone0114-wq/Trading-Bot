@@ -1925,3 +1925,4 @@ time,kind,mode,symbol,market,side,qty,price,stop,target,pnl,note,detail
 2026-11-27T00:01:39+00:00,alert,paper,DOGE/USDT [T],crypto_t,SELL,,0.05638,0.04554316775992905,0.5638,,score -1.0,
 2026-11-27T00:01:46+00:00,alert,paper,LINK/USDT [T],crypto_t,SELL,,9.27755,7.467835593531616,92.7755,,score -0.922,
 2026-11-27T00:01:53+00:00,alert,paper,AVAX/USDT [T],crypto_t,SELL,,6.594,5.113083941824341,65.94,,score -1.0,
+2026-11-27T14:01:59+00:00,alert,paper,SUPV.BA,byma,SELL,,1769.0,,,,score -0.5,
